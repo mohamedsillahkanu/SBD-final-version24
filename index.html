@@ -3,534 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>School-Based Distribution of ITNs — ICF-SL</title>
+    <title>School-Based Distribution of ITNs</title>
+    
+    <!-- PWA Meta Tags -->
     <meta name="description" content="School-Based ITN Distribution Survey for Sierra Leone">
-    <meta name="theme-color" content="#004080">
+    <meta name="theme-color" content="#0056a8">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ITN Survey">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="ITN Survey">
+    <meta name="msapplication-TileColor" content="#0056a8">
+    <meta name="msapplication-tap-highlight" content="no">
+    
+    <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
+    
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="apple-touch-icon" href="icon-192.svg">
+    
+    <!-- Oswald Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
-<style>
-/* ═══════════════════════ MAIN TAB NAV ═══════════════════════ */
-.main-tab-nav {
-  display: flex;
-  background: #002f5e;
-  border-bottom: 3px solid #C8973A;
-  position: sticky; top: 0; z-index: 500;
-  box-shadow: 0 3px 16px rgba(0,0,0,0.25);
-}
-.main-tab-btn {
-  flex: 1;
-  padding: 0 10px;
-  height: 52px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  text-transform: uppercase;
-  border-bottom: 4px solid transparent;
-  margin-bottom: -3px;
-  transition: all 0.2s;
-  position: relative;
-}
-.main-tab-btn.active {
-  color: #fff;
-  border-bottom-color: #C8973A;
-  background: rgba(200,151,58,0.10);
-}
-.main-tab-btn:hover:not(.active) { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.04); }
-.main-tab-btn svg { width: 17px; height: 17px; flex-shrink:0; }
-.main-tab-badge {
-  background: #C8973A;
-  color: #fff;
-  border-radius: 10px;
-  padding: 1px 7px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  margin-left: 2px;
-}
+    <style>
+        /* ── LOGIN SCREEN ── */
+        #loginScreen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(160deg, #002d5a 0%, #004080 60%, #005db8 100%);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .login-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 40px 32px 32px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+        }
+        .login-logo-row {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .login-logo-row img {
+            height: 56px;
+            object-fit: contain;
+        }
+        .login-app-title {
+            text-align: center;
+            font-family: 'Oswald', sans-serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: #004080;
+            letter-spacing: 0.5px;
+            margin: 10px 0 2px;
+        }
+        .login-app-sub {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 28px;
+        }
+        .login-divider {
+            border: none;
+            border-top: 1px solid #e8e8e8;
+            margin-bottom: 24px;
+        }
+        .login-label {
+            display: block;
+            font-family: 'Oswald', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            color: #555;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+        }
+        .login-input {
+            display: block;
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid #d0d0d0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+        .login-input:focus {
+            border-color: #004080;
+        }
+        .login-pass-note {
+            font-size: 11px;
+            color: #999;
+            margin-left: 4px;
+        }
+        .login-error {
+            display: none;
+            background: #fff0f0;
+            border: 1px solid #ffb3b3;
+            color: #c0392b;
+            border-radius: 7px;
+            padding: 9px 13px;
+            font-size: 13px;
+            margin-bottom: 14px;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 13px;
+            background: #004080;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Oswald', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .login-btn:hover { background: #00306a; }
+        .login-footer-note {
+            text-align: center;
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 18px;
+        }
 
-/* ═══════════════════════ PANEL WRAPPERS ═══════════════════════ */
-#surveyPanel { display: block; }
-#logisticsPanel { display: none; }
+        /* ── USER PILL in status bar ── */
+        .user-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 20px;
+            padding: 3px 10px 3px 7px;
+            font-size: 12px;
+            color: #fff;
+        }
+        .user-pill svg {
+            width: 13px;
+            height: 13px;
+            stroke: #fff;
+            flex-shrink: 0;
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #fff;
+            border-radius: 6px;
+            padding: 3px 10px;
+            font-size: 11px;
+            font-family: 'Oswald', sans-serif;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .logout-btn:hover { background: rgba(255,255,255,0.22); }
 
-/* ═══════════════════════ LOGISTICS — FULL STYLES ═══════════════════════ */
-:root {
-  --log-navy: #004080;
-  --log-navy-dark: #002f5e;
-  --log-navy-light: #1a5a9e;
-  --log-gold: #C8973A;
-  --log-gold-light: #e0af58;
-  --log-gold-pale: #fdf4e7;
-  --log-white: #ffffff;
-  --log-gray-100: #f0f2f5;
-  --log-gray-200: #e2e6ec;
-  --log-gray-400: #9ba8b8;
-  --log-gray-600: #5a6677;
-  --log-gray-800: #2c3440;
-  --log-green: #1a7a4a;
-  --log-green-light: #d4f0e3;
-  --log-red: #c0392b;
-  --log-red-light: #fde8e6;
-  --log-orange: #d4700a;
-  --log-orange-light: #fff0dc;
-  --log-blue-light: #dceeff;
-  --log-radius: 10px;
-  --log-shadow: 0 2px 12px rgba(0,64,128,0.10);
-  --log-shadow-lg: 0 8px 32px rgba(0,64,128,0.16);
-}
-
-#logisticsPanel {
-  background: #f0f2f5;
-  min-height: 100vh;
-  font-family: 'Oswald', sans-serif;
-}
-
-/* LOGIN OVERLAY */
-#logLoginOverlay {
-  position: fixed; inset: 0; z-index: 9000;
-  background: linear-gradient(145deg, var(--log-navy-dark) 0%, var(--log-navy) 50%, var(--log-navy-light) 100%);
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
-}
-.log-login-box {
-  background: var(--log-white);
-  border-radius: 16px;
-  padding: 32px 28px;
-  width: 100%; max-width: 440px;
-  box-shadow: var(--log-shadow-lg);
-  border-top: 5px solid var(--log-gold);
-}
-.log-login-header { text-align: center; margin-bottom: 24px; }
-.log-login-logo {
-  width: 72px; height: 72px;
-  border-radius: 50%; object-fit: cover;
-  border: 3px solid var(--log-gold);
-  margin-bottom: 12px;
-}
-.log-login-title {
-  font-family: 'Oswald', sans-serif;
-  font-size: 1.35rem; font-weight: 600;
-  color: var(--log-navy); letter-spacing: 0.04em;
-}
-.log-login-divider { width: 50px; height: 3px; background: var(--log-gold); margin: 10px auto; }
-.log-login-sub { font-size: 0.82rem; color: var(--log-gray-600); font-family: sans-serif; }
-.log-label {
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem; font-weight: 500;
-  letter-spacing: 0.08em; color: var(--log-navy); text-transform: uppercase;
-  margin-bottom: 5px; display: block;
-}
-.log-input {
-  width: 100%; border: 2px solid var(--log-gray-200);
-  border-radius: 6px; padding: 10px 13px;
-  font-size: 0.92rem; color: var(--log-gray-800);
-  outline: none; transition: border-color 0.2s;
-  font-family: sans-serif;
-}
-.log-input:focus { border-color: var(--log-navy); }
-.log-group { margin-bottom: 15px; }
-.log-or {
-  text-align: center; color: var(--log-gray-400);
-  font-size: 0.78rem; margin: 12px 0; position: relative;
-  font-family: sans-serif;
-}
-.log-or::before,.log-or::after {
-  content:''; position:absolute; top:50%;
-  width:40%; height:1px; background:var(--log-gray-200);
-}
-.log-or::before{left:0;} .log-or::after{right:0;}
-.log-qr-btn {
-  width: 100%; border: 2px dashed var(--log-navy-light);
-  border-radius: 6px; padding: 11px;
-  background: var(--log-blue-light); color: var(--log-navy);
-  font-family: 'Oswald', sans-serif; font-size: 0.82rem;
-  font-weight: 600; letter-spacing: 0.06em; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: background 0.2s; margin-bottom: 14px;
-}
-.log-qr-btn:hover { background: #bbd4ef; }
-.log-btn {
-  width: 100%; background: var(--log-navy); color: var(--log-white);
-  border: none; border-radius: 6px; padding: 13px;
-  font-family: 'Oswald', sans-serif; font-size: 0.95rem;
-  font-weight: 600; letter-spacing: 0.08em; cursor: pointer;
-  transition: background 0.2s; display: flex; align-items: center;
-  justify-content: center; gap: 8px;
-}
-.log-btn:hover { background: var(--log-navy-dark); }
-.log-error { color: var(--log-red); font-size: 0.8rem; margin-top: 8px; display: none; font-family: sans-serif; }
-
-/* TOP BAR */
-.log-topbar {
-  background: linear-gradient(135deg, var(--log-navy-dark) 0%, var(--log-navy) 100%);
-  padding: 0 18px;
-  display: flex; align-items: center; justify-content: space-between;
-  min-height: 54px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-}
-.log-topbar-left { display: flex; align-items: center; gap: 12px; }
-.log-topbar-logo { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--log-gold); flex-shrink: 0; }
-.log-topbar-title { font-family: 'Oswald', sans-serif; font-size: 0.95rem; font-weight: 600; color: var(--log-white); letter-spacing: 0.04em; }
-.log-topbar-sub { font-size: 0.7rem; color: rgba(255,255,255,0.6); }
-.log-staff-badge {
-  background: rgba(200,151,58,0.22); border: 1px solid var(--log-gold);
-  border-radius: 20px; padding: 4px 12px;
-  font-size: 0.75rem; color: var(--log-gold-light);
-  font-family: 'Oswald', sans-serif; letter-spacing: 0.04em;
-  display: flex; align-items: center; gap: 6px; max-width: 200px;
-}
-.log-staff-badge-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.log-logout-btn {
-  background: none; border: none; color: rgba(255,255,255,0.55);
-  cursor: pointer; padding: 4px; display: flex; align-items: center; transition: color 0.2s;
-}
-.log-logout-btn:hover { color: var(--log-white); }
-.log-topbar-right { display: flex; align-items: center; gap: 8px; }
-
-/* SUB TAB NAV */
-.log-sub-tabs {
-  display: flex; background: var(--log-white);
-  border-bottom: 1px solid var(--log-gray-200);
-  box-shadow: var(--log-shadow);
-  overflow-x: auto;
-}
-.log-sub-tab {
-  flex: 1; min-width: 130px; padding: 13px 12px;
-  border: none; background: none; cursor: pointer;
-  font-family: 'Oswald', sans-serif; font-size: 0.78rem;
-  font-weight: 600; letter-spacing: 0.07em;
-  color: var(--log-gray-600); text-transform: uppercase;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  border-bottom: 3px solid transparent; transition: all 0.2s;
-}
-.log-sub-tab.active { color: var(--log-navy); border-bottom-color: var(--log-gold); background: #f0f6ff; }
-.log-sub-tab svg { width: 15px; height: 15px; }
-.log-sub-badge { background: var(--log-gold); color: #fff; border-radius: 10px; padding: 1px 7px; font-size: 0.65rem; font-weight: 700; }
-
-/* PAGE WRAP */
-.log-wrap { max-width: 860px; margin: 0 auto; padding: 18px 14px 40px; }
-.log-panel { display: none; } .log-panel.active { display: block; }
-
-/* CARDS */
-.log-card { background: var(--log-white); border-radius: var(--log-radius); box-shadow: var(--log-shadow); overflow: hidden; margin-bottom: 16px; }
-.log-card-header {
-  background: linear-gradient(135deg, var(--log-navy) 0%, var(--log-navy-light) 100%);
-  padding: 13px 18px; display: flex; align-items: center; gap: 9px;
-}
-.log-card-header.gold { background: linear-gradient(135deg, var(--log-gold) 0%, var(--log-gold-light) 100%); }
-.log-card-header.green { background: linear-gradient(135deg, var(--log-green) 0%, #2ecc71 100%); }
-.log-card-header svg { width: 17px; height: 17px; color: rgba(255,255,255,0.85); flex-shrink: 0; }
-.log-card-title { font-family: 'Oswald', sans-serif; font-size: 0.88rem; font-weight: 600; color: #fff; letter-spacing: 0.06em; }
-.log-card-header-actions { margin-left: auto; }
-.log-card-body { padding: 18px; }
-
-/* FORM ELEMENTS */
-.log-row { display: grid; gap: 13px; margin-bottom: 13px; }
-.log-row.c2 { grid-template-columns: 1fr 1fr; }
-.log-row.c3 { grid-template-columns: 1fr 1fr 1fr; }
-@media(max-width:560px){ .log-row.c2,.log-row.c3{ grid-template-columns:1fr; } }
-.log-form-group { display: flex; flex-direction: column; gap: 4px; }
-.log-form-label {
-  font-family: 'Oswald', sans-serif; font-size: 0.7rem; font-weight: 500;
-  letter-spacing: 0.08em; color: var(--log-navy); text-transform: uppercase;
-}
-.log-req { color: var(--log-red); }
-.log-form-input, .log-form-select {
-  border: 2px solid var(--log-gray-200); border-radius: 6px;
-  padding: 10px 12px; font-size: 0.9rem; color: var(--log-gray-800);
-  outline: none; width: 100%; transition: border-color 0.2s;
-  background: var(--log-white); font-family: sans-serif;
-}
-.log-form-input:focus,.log-form-select:focus { border-color: var(--log-navy); }
-.log-form-input.err,.log-form-select.err { border-color: var(--log-red); }
-.log-form-input.up { text-transform: uppercase; font-family: 'Oswald', sans-serif; font-size: 1.05rem; letter-spacing: 0.12em; font-weight: 600; text-align: center; }
-.log-form-input[readonly] { background: var(--log-gray-100); color: var(--log-gray-600); font-style: italic; font-size: 0.85rem; }
-.log-hint { font-size: 0.72rem; color: var(--log-gray-400); font-family: sans-serif; }
-.log-ferr { font-size: 0.72rem; color: var(--log-red); display: none; font-family: sans-serif; }
-.log-ferr.show { display: block; }
-
-/* ITN BLOCK */
-.log-itn-block {
-  background: var(--log-gold-pale); border: 1px solid rgba(200,151,58,0.35);
-  border-radius: 8px; padding: 15px; margin-bottom: 13px;
-}
-.log-itn-block-title {
-  font-family: 'Oswald', sans-serif; font-size: 0.75rem; font-weight: 700;
-  letter-spacing: 0.08em; color: var(--log-orange); text-transform: uppercase;
-  margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
-}
-.log-itn-block-title svg { width: 14px; height: 14px; }
-.log-itn-total {
-  background: var(--log-navy); color: #fff;
-  border-radius: 6px; padding: 10px 14px;
-  display: flex; justify-content: space-between; align-items: center;
-  margin-top: 10px;
-}
-.log-itn-total-label { font-family: 'Oswald', sans-serif; font-size: 0.75rem; letter-spacing: 0.07em; }
-.log-itn-total-val { font-family: 'Oswald', sans-serif; font-size: 1.5rem; font-weight: 700; }
-
-/* STEP TRACK */
-.log-step-track { display: flex; align-items: center; margin-bottom: 6px; }
-.log-step-item { display: flex; align-items: center; flex: 1; }
-.log-step-circle {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: var(--log-gray-200); color: var(--log-gray-600);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Oswald', sans-serif; font-size: 0.82rem; font-weight: 700;
-  flex-shrink: 0; transition: all 0.25s;
-}
-.log-step-circle.active { background: var(--log-navy); color: #fff; }
-.log-step-circle.done { background: var(--log-green); color: #fff; }
-.log-step-line { flex: 1; height: 3px; background: var(--log-gray-200); transition: background 0.25s; }
-.log-step-line.done { background: var(--log-green); }
-.log-step-labels { display: flex; justify-content: space-between; margin-bottom: 18px; }
-.log-step-lbl {
-  font-family: 'Oswald', sans-serif; font-size: 0.65rem; font-weight: 500;
-  letter-spacing: 0.05em; color: var(--log-gray-400); text-transform: uppercase;
-  text-align: center; flex: 1;
-}
-.log-step-lbl.active { color: var(--log-navy); }
-.log-step-lbl.done { color: var(--log-green); }
-
-/* BUTTONS */
-.log-btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; padding-top: 14px; border-top: 1px solid var(--log-gray-200); margin-top: 14px; }
-.log-btn-action {
-  padding: 11px 22px; border: none; border-radius: 6px;
-  font-family: 'Oswald', sans-serif; font-size: 0.85rem;
-  font-weight: 600; letter-spacing: 0.07em;
-  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
-  transition: all 0.18s;
-}
-.log-btn-action svg { width: 15px; height: 15px; }
-.lba-navy { background: var(--log-navy); color: #fff; }
-.lba-navy:hover { background: var(--log-navy-dark); }
-.lba-gold { background: var(--log-gold); color: #fff; }
-.lba-gold:hover { background: var(--log-gold-light); }
-.lba-green { background: var(--log-green); color: #fff; }
-.lba-green:hover { background: #145e38; }
-.lba-outline { background: none; border: 2px solid var(--log-gray-200); color: var(--log-gray-600); }
-.lba-outline:hover { border-color: var(--log-navy); color: var(--log-navy); }
-.lba-submit { background: var(--log-green); color: #fff; font-size: 0.92rem; padding: 13px 28px; }
-.lba-submit:hover { background: #145e38; }
-.lba-submit:disabled { background: var(--log-gray-400); cursor: not-allowed; }
-.lba-sm { padding: 8px 14px; font-size: 0.75rem; }
-
-/* QR SCAN */
-.log-qr-wrap { text-align: center; }
-.log-qr-icon-wrap {
-  width: 58px; height: 58px; background: var(--log-blue-light);
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 14px;
-}
-.log-qr-icon-wrap svg { width: 30px; height: 30px; color: var(--log-navy); }
-.log-qr-title { font-family: 'Oswald', sans-serif; font-size: 1.05rem; font-weight: 600; color: var(--log-navy); letter-spacing: 0.05em; margin-bottom: 5px; }
-.log-qr-sub { font-size: 0.82rem; color: var(--log-gray-600); margin-bottom: 16px; font-family: sans-serif; }
-#logQrVideoContainer {
-  position: relative; width: 100%; max-width: 320px;
-  margin: 0 auto 14px; border-radius: 10px;
-  overflow: hidden; border: 3px solid var(--log-navy); display: none;
-}
-#logQrVideo { width: 100%; display: block; }
-.log-scan-line {
-  position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: var(--log-gold); animation: logScan 2s linear infinite;
-  box-shadow: 0 0 8px var(--log-gold);
-}
-@keyframes logScan { 0%{top:0} 50%{top:calc(100% - 3px)} 100%{top:0} }
-.log-qr-corner { position: absolute; width: 26px; height: 26px; border-color: var(--log-gold); border-style: solid; }
-.log-qr-corner.tl{top:8px;left:8px;border-width:3px 0 0 3px;}
-.log-qr-corner.tr{top:8px;right:8px;border-width:3px 3px 0 0;}
-.log-qr-corner.bl{bottom:8px;left:8px;border-width:0 0 3px 3px;}
-.log-qr-corner.br{bottom:8px;right:8px;border-width:0 3px 3px 0;}
-#logQrCanvas { display: none; }
-.log-qr-result {
-  padding: 10px 16px; border-radius: 6px;
-  font-family: 'Oswald', sans-serif; font-size: 0.88rem; font-weight: 600;
-  letter-spacing: 0.05em; margin: 0 auto 12px; max-width: 320px; display: none;
-}
-.log-qr-result.ok { background: var(--log-green-light); border: 2px solid var(--log-green); color: var(--log-green); }
-.log-qr-result.fail { background: var(--log-red-light); border: 2px solid var(--log-red); color: var(--log-red); }
-.log-qr-manual { display: flex; gap: 8px; max-width: 320px; margin: 0 auto 12px; }
-.log-qr-manual input {
-  flex: 1; border: 2px solid var(--log-gray-200); border-radius: 6px;
-  padding: 9px 12px; font-size: 0.88rem; outline: none; font-family: sans-serif;
-}
-.log-qr-manual input:focus { border-color: var(--log-navy); }
-.log-driver-verified-card {
-  background: var(--log-green-light); border: 2px solid var(--log-green);
-  border-radius: 8px; padding: 14px 18px; margin: 12px auto 0;
-  max-width: 420px; text-align: left;
-}
-.log-driver-verified-title {
-  font-family: 'Oswald', sans-serif; font-size: 0.75rem; font-weight: 700;
-  color: var(--log-green); letter-spacing: 0.08em; text-transform: uppercase;
-  margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
-}
-.log-driver-verified-title svg { width: 14px; height: 14px; }
-.log-driver-info-row { font-size: 0.82rem; color: var(--log-gray-800); margin-bottom: 3px; font-family: sans-serif; }
-.log-driver-info-row b { font-family: 'Oswald', sans-serif; color: var(--log-navy); }
-
-/* PLATE PREVIEW */
-.log-plate-preview {
-  background: var(--log-gray-100); border-radius: 8px;
-  padding: 12px; text-align: center; margin-top: 10px;
-}
-.log-plate-label { font-family: 'Oswald', sans-serif; font-size: 0.7rem; color: var(--log-gray-600); letter-spacing: 0.06em; display: block; margin-bottom: 6px; }
-.log-plate-val {
-  font-family: 'Oswald', sans-serif; font-size: 1.5rem; font-weight: 700;
-  color: var(--log-navy); letter-spacing: 0.12em;
-  border: 2px solid var(--log-navy); padding: 4px 20px;
-  border-radius: 4px; display: inline-block;
-}
-
-/* REVIEW BOX */
-.log-review-box {
-  background: #f7f9fc; border: 1px solid var(--log-gray-200);
-  border-radius: 8px; padding: 15px; margin-top: 12px;
-}
-.log-review-title { font-family: 'Oswald', sans-serif; font-size: 0.75rem; font-weight: 700; color: var(--log-navy); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 10px; }
-.log-review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; font-size: 0.82rem; font-family: sans-serif; }
-@media(max-width:480px){ .log-review-grid{grid-template-columns:1fr;} }
-.log-review-item label { color: var(--log-gray-600); }
-.log-review-item span { color: var(--log-gray-800); font-weight: 600; }
-
-/* SUCCESS */
-.log-success-wrap { text-align: center; padding: 28px 20px; }
-.log-success-icon {
-  width: 66px; height: 66px; background: var(--log-green-light);
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 16px;
-}
-.log-success-icon svg { width: 34px; height: 34px; color: var(--log-green); }
-.log-success-title { font-family: 'Oswald', sans-serif; font-size: 1.25rem; font-weight: 700; color: var(--log-green); letter-spacing: 0.04em; margin-bottom: 6px; }
-.log-success-sub { font-size: 0.85rem; color: var(--log-gray-600); margin-bottom: 18px; font-family: sans-serif; }
-.log-success-id { background: var(--log-gray-100); border: 1px solid var(--log-gray-200); border-radius: 6px; padding: 8px 16px; font-family: 'Oswald', sans-serif; font-size: 0.88rem; color: var(--log-navy); letter-spacing: 0.06em; margin-bottom: 18px; display: inline-block; }
-
-/* STATS */
-.log-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 13px; margin-bottom: 18px; }
-.log-stat-card { background: var(--log-white); border-radius: var(--log-radius); box-shadow: var(--log-shadow); padding: 16px 14px; border-left: 4px solid var(--log-navy); }
-.log-stat-card.g { border-left-color: var(--log-gold); }
-.log-stat-card.gr { border-left-color: var(--log-green); }
-.log-stat-card.or { border-left-color: var(--log-orange); }
-.log-stat-card.re { border-left-color: var(--log-red); }
-.log-stat-label { font-family: 'Oswald', sans-serif; font-size: 0.66rem; font-weight: 500; letter-spacing: 0.07em; color: var(--log-gray-600); text-transform: uppercase; }
-.log-stat-value { font-family: 'Oswald', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--log-navy); line-height: 1.1; }
-.log-stat-card.g .log-stat-value { color: var(--log-gold); }
-.log-stat-card.gr .log-stat-value { color: var(--log-green); }
-.log-stat-card.or .log-stat-value { color: var(--log-orange); }
-.log-stat-card.re .log-stat-value { color: var(--log-red); }
-.log-stat-sub { font-size: 0.72rem; color: var(--log-gray-400); font-family: sans-serif; }
-
-/* PROGRESS */
-.log-prog-wrap { margin-bottom: 16px; }
-.log-prog-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-.log-prog-name { font-family: 'Oswald', sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; color: var(--log-navy); }
-.log-prog-pct { font-family: 'Oswald', sans-serif; font-size: 0.72rem; color: var(--log-gray-600); }
-.log-prog-outer { height: 9px; background: var(--log-gray-200); border-radius: 5px; overflow: hidden; }
-.log-prog-inner { height: 100%; background: linear-gradient(90deg, var(--log-navy), var(--log-navy-light)); border-radius: 5px; transition: width 0.4s ease; }
-.log-prog-inner.g { background: linear-gradient(90deg, var(--log-gold), var(--log-gold-light)); }
-.log-prog-inner.gr { background: linear-gradient(90deg, var(--log-green), #34d07e); }
-
-/* DISTRICT CARDS */
-.log-dist-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 12px; margin-bottom: 18px; }
-.log-dist-card { background: var(--log-white); border: 1px solid var(--log-gray-200); border-radius: var(--log-radius); padding: 14px; box-shadow: var(--log-shadow); }
-.log-dist-name { font-family: 'Oswald', sans-serif; font-size: 0.8rem; font-weight: 700; color: var(--log-navy); letter-spacing: 0.05em; margin-bottom: 9px; text-transform: uppercase; }
-.log-dist-stat { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--log-gray-600); margin-bottom: 4px; font-family: sans-serif; }
-.log-dist-stat span:last-child { font-weight: 700; color: var(--log-gray-800); }
-
-/* RECORDS TABLE */
-.log-tbl-wrap { overflow-x: auto; }
-.log-tbl { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
-.log-tbl th { background: var(--log-navy); color: #fff; font-family: 'Oswald', sans-serif; font-size: 0.68rem; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; padding: 9px 11px; text-align: left; white-space: nowrap; }
-.log-tbl td { padding: 9px 11px; border-bottom: 1px solid var(--log-gray-200); color: var(--log-gray-800); white-space: nowrap; font-family: sans-serif; }
-.log-tbl tr:hover td { background: #f7f9fc; }
-.log-tbl tr:last-child td { border-bottom: none; }
-.log-badge { display: inline-block; padding: 2px 9px; border-radius: 11px; font-family: 'Oswald', sans-serif; font-size: 0.63rem; font-weight: 700; letter-spacing: 0.05em; }
-.log-badge.ok { background: var(--log-green-light); color: var(--log-green); }
-.log-badge.pen { background: var(--log-orange-light); color: var(--log-orange); }
-.log-badge.ver { background: var(--log-blue-light); color: var(--log-navy); }
-
-/* TOAST */
-.log-toast {
-  position: fixed; bottom: 24px; left: 50%;
-  transform: translateX(-50%) translateY(110px);
-  background: #2c3440; color: #fff;
-  padding: 11px 22px; border-radius: 22px;
-  font-size: 0.85rem; z-index: 99999;
-  box-shadow: var(--log-shadow-lg); transition: transform 0.28s ease;
-  max-width: 90vw; text-align: center; font-family: sans-serif;
-}
-.log-toast.show { transform: translateX(-50%) translateY(0); }
-.log-toast.ok { background: var(--log-green); }
-.log-toast.err { background: var(--log-red); }
-.log-toast.warn { background: var(--log-orange); }
-
-/* LOGIN QR MODAL */
-.log-modal { position: fixed; inset: 0; z-index: 9500; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; padding: 18px; display: none; }
-.log-modal.open { display: flex; }
-.log-modal-box { background: var(--log-white); border-radius: var(--log-radius); width: 100%; max-width: 380px; box-shadow: var(--log-shadow-lg); overflow: hidden; }
-.log-modal-head { background: var(--log-navy); padding: 13px 16px; display: flex; align-items: center; justify-content: space-between; }
-.log-modal-title { font-family: 'Oswald', sans-serif; font-size: 0.88rem; font-weight: 600; color: #fff; letter-spacing: 0.06em; }
-.log-modal-x { background: none; border: none; color: rgba(255,255,255,0.65); cursor: pointer; padding: 2px; display: flex; align-items: center; }
-.log-modal-x:hover { color: #fff; }
-.log-modal-body { padding: 18px; }
-
-/* VALIDATION WARNING NOTE */
-.log-validate-note {
-  background: var(--log-blue-light); border: 1px solid #a0c8f0;
-  border-radius: 8px; padding: 10px 14px;
-  display: flex; align-items: center; gap: 8px;
-  font-size: 0.8rem; color: var(--log-navy); font-family: sans-serif;
-  margin-bottom: 13px;
-}
-.log-validate-note svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--log-navy); }
-
-/* FOOTER */
-.log-footer { text-align: center; padding: 20px 16px; font-size: 0.76rem; color: var(--log-gray-400); border-top: 1px solid var(--log-gray-200); margin-top: 20px; font-family: sans-serif; }
-.log-footer strong { color: var(--log-navy); font-family: 'Oswald', sans-serif; }
-</style>
+        /* admin badge */
+        .admin-badge {
+            background: #f0a500;
+            color: #fff;
+            font-size: 10px;
+            font-family: 'Oswald', sans-serif;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            margin-left: 4px;
+        }
+    </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════
-     MAIN TAB NAVIGATION
-═══════════════════════════════════════ -->
-<nav class="main-tab-nav">
-  <button class="main-tab-btn active" id="mainTabSurvey" onclick="switchMainTab('survey')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-    ITN SURVEY
-  </button>
-  <button class="main-tab-btn" id="mainTabLogistics" onclick="switchMainTab('logistics')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H5a2 2 0 00-2 2v0a2 2 0 002 2h14a2 2 0 002-2v0a2 2 0 00-2-2h-4M12 3v14M5 10l7-7 7 7"/></svg>
-    LOGISTICS — DMS TO PHU
-    <span class="main-tab-badge" id="logBadge">0</span>
-  </button>
-</nav>
+    <!-- ══════════════════════════════════════════
+         LOGIN SCREEN
+    ══════════════════════════════════════════ -->
+    <div id="loginScreen">
+        <div class="login-card">
+            <div class="login-logo-row">
+                <img src="ICF-SL.jpg"
+                     alt="ICF-SL"
+                     onerror="this.src='https://github.com/mohamedsillahkanu/gdp-dashboard-2/raw/6c7463b0d5c3be150aafae695a4bcbbd8aeb1499/ICF-SL.jpg'; this.onerror=null;">
+            </div>
+            <div class="login-app-title">ICF COLLECT</div>
+            <div class="login-app-sub">School-Based ITN Distribution — Sierra Leone</div>
+            <hr class="login-divider">
 
-<!-- ═══════════════════════════════════════
-     SURVEY PANEL (original app)
-═══════════════════════════════════════ -->
-<div id="surveyPanel">
+            <label class="login-label">USERNAME</label>
+            <input class="login-input" type="text" id="loginUsername"
+                   placeholder="e.g. koroma.a"
+                   autocomplete="username"
+                   onkeydown="if(event.key==='Enter') document.getElementById('loginPassword').focus()">
+
+            <label class="login-label">
+                PASSWORD
+                <span class="login-pass-note">(admin only — leave blank otherwise)</span>
+            </label>
+            <input class="login-input" type="password" id="loginPassword"
+                   placeholder="Leave blank if not admin"
+                   autocomplete="current-password"
+                   onkeydown="if(event.key==='Enter') handleLogin()">
+
+            <div class="login-error" id="loginError"></div>
+
+            <button class="login-btn" onclick="handleLogin()">SIGN IN</button>
+
+            <div class="login-footer-note">
+                Contact your supervisor if your username is not recognised
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         MAIN APP (hidden until login)
+    ══════════════════════════════════════════ -->
+    <div id="appMain" style="display:none;">
 
     <!-- PWA Install Banner -->
     <div class="install-banner" id="installBanner">
@@ -549,7 +250,8 @@
             <!-- HEADER -->
             <div class="page-header">
                 <div class="header-logos">
-                    <img src="https://github.com/mohamedsillahkanu/gdp-dashboard-2/raw/6c7463b0d5c3be150aafae695a4bcbbd8aeb1499/ICF-SL.jpg" alt="ICF-SL Logo" class="header-logo-main">
+                    <img src="ICF-SL.jpg" alt="ICF-SL Logo" class="header-logo-main"
+                         onerror="this.src='https://github.com/mohamedsillahkanu/gdp-dashboard-2/raw/6c7463b0d5c3be150aafae695a4bcbbd8aeb1499/ICF-SL.jpg'; this.onerror=null;">
                 </div>
                 <h3>Informatics Consultancy Firm-Sierra Leone (ICF-SL)</h3>
                 <p class="tagline"><em>Driving Data-Driven Solutions for Health and Development</em></p>
@@ -564,19 +266,28 @@
                 <div class="partners-grid">
                     <div class="partner-logo-card">
                         <div class="partner-logo-img">
-                            <img src="logo_mohs.png" alt="Ministry of Health" style="display:none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';"><div class="logo-placeholder-box">MoHS</div>
+                            <img src="logo_mohs.png" alt="Ministry of Health" style="display:none;"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                 onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                            <div class="logo-placeholder-box">MoHS</div>
                         </div>
                         <span class="partner-name">Ministry of Health</span>
                     </div>
                     <div class="partner-logo-card">
                         <div class="partner-logo-img">
-                            <img src="logo_nmcp.png" alt="NMCP" style="display:none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';"><div class="logo-placeholder-box">NMCP</div>
+                            <img src="logo_nmcp.png" alt="NMCP" style="display:none;"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                 onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                            <div class="logo-placeholder-box">NMCP</div>
                         </div>
                         <span class="partner-name">NMCP</span>
                     </div>
                     <div class="partner-logo-card">
                         <div class="partner-logo-img">
-                            <img src="logo_pmi.png" alt="PMI Evolve" style="display:none;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" onload="this.style.display='block'; this.nextElementSibling.style.display='none';"><div class="logo-placeholder-box">PMI</div>
+                            <img src="logo_pmi.png" alt="PMI Evolve" style="display:none;"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                 onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                            <div class="logo-placeholder-box">PMI</div>
                         </div>
                         <span class="partner-name">PMI Evolve</span>
                     </div>
@@ -587,31 +298,78 @@
             <div class="photo-frame-section">
                 <div class="photo-frame">
                     <div class="photo-inner">
-                        <img src="infographics.png" alt="ITN Distribution" class="photo-image" id="photoImage" style="display:none;" onerror="this.style.display='none'; document.getElementById('photoPlaceholder').style.display='flex';" onload="this.style.display='block'; document.getElementById('photoPlaceholder').style.display='none';">
+                        <img src="infographics.png" alt="ITN Distribution" class="photo-image" id="photoImage" style="display:none;"
+                             onerror="this.style.display='none'; document.getElementById('photoPlaceholder').style.display='flex';"
+                             onload="this.style.display='block'; document.getElementById('photoPlaceholder').style.display='none';">
                         <div class="photo-placeholder" id="photoPlaceholder" style="display:flex;">
-                            <svg class="photo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <svg class="photo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21 15 16 10 5 21"/>
+                            </svg>
                             <p class="photo-placeholder-text">DISTRIBUTION PHOTO</p>
                             <p class="photo-placeholder-hint">Place <strong>distribution_photo.jpg</strong> in same folder</p>
                         </div>
                     </div>
-                    <div class="photo-caption"><svg class="caption-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>School-Based ITN Distribution Campaign — Sierra Leone</div>
+                    <div class="photo-caption">
+                        <svg class="caption-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
+                        </svg>
+                        School-Based ITN Distribution Campaign — Sierra Leone
+                    </div>
                 </div>
             </div>
 
             <!-- CONTROLS -->
             <div class="controls-bar">
-                <button class="control-btn" id="viewDataBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3zM3 9h18M9 21V9"/></svg>VIEW DATA</button>
-                <button class="control-btn" id="downloadDataBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>DOWNLOAD</button>
-                <button class="control-btn" id="viewAnalysisBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>ANALYSIS</button>
-                <button class="control-btn draft-btn" id="viewDraftsBtn"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>DRAFTS</button>
-                <button class="control-btn update-btn" id="updateAppBtn" onclick="updateApp()"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0115.36-6.36L21 8M3 22v-6h6M21 12a9 9 0 01-15.36 6.36L3 16"/></svg>UPDATE</button>
+                <button class="control-btn" id="viewDataBtn">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3zM3 9h18M9 21V9"/></svg>
+                    VIEW DATA
+                </button>
+                <button class="control-btn" id="downloadDataBtn">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    DOWNLOAD
+                </button>
+                <button class="control-btn" id="viewAnalysisBtn">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                    ANALYSIS
+                </button>
+                <button class="control-btn draft-btn" id="viewDraftsBtn">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    DRAFTS
+                </button>
+                <button class="control-btn update-btn" id="updateAppBtn" onclick="updateApp()">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0115.36-6.36L21 8M3 22v-6h6M21 12a9 9 0 01-15.36 6.36L3 16"/></svg>
+                    UPDATE
+                </button>
             </div>
 
-            <!-- STATUS BAR -->
+            <!-- STATUS BAR (with user pill + logout) -->
             <div class="status-bar">
-                <div class="status-item"><div class="status-indicator" id="statusIndicator"></div><span class="status-text" id="statusText">CHECKING...</span></div>
-                <div class="status-item"><span class="status-label">DRAFTS:</span><span class="draft-count" id="draftCount">0</span></div>
-                <div class="status-item"><span class="status-label">PENDING:</span><span class="pending-count" id="pendingCount">0</span></div>
+                <div class="status-item">
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <span class="status-text" id="statusText">CHECKING...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">DRAFTS:</span>
+                    <span class="draft-count" id="draftCount">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">PENDING:</span>
+                    <span class="pending-count" id="pendingCount">0</span>
+                </div>
+                <!-- USER INFO -->
+                <div class="status-item" style="margin-left:auto;">
+                    <span class="user-pill" id="userPill">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span id="currentUserDisplay">—</span>
+                        <span class="admin-badge" id="adminBadge" style="display:none;">ADMIN</span>
+                    </span>
+                    <button class="logout-btn" onclick="handleLogout()" style="margin-left:6px;">SIGN OUT</button>
+                </div>
             </div>
 
             <!-- FORM -->
@@ -624,10 +382,14 @@
                         <input type="hidden" name="form_status" id="form_status" value="draft">
                         <input type="hidden" name="draft_id" id="draft_id" value="">
                         <input type="hidden" name="timestamp" id="timestamp" value="">
+                        <input type="hidden" name="submitted_by" id="submitted_by" value="">
 
-                        <!-- SECTION 1 -->
+                        <!-- SECTION 1: INTRODUCTION -->
                         <div class="form-section active" data-section="1">
-                            <div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></div><div><h2 class="section-title">SECTION A: INTRODUCTION</h2><p class="section-description">About the School-Based ITN Distribution Survey</p></div></div>
+                            <div class="section-header">
+                                <div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></div>
+                                <div><h2 class="section-title">SECTION A: INTRODUCTION</h2><p class="section-description">About the School-Based ITN Distribution Survey</p></div>
+                            </div>
                             <div class="intro-card">
                                 <div class="intro-icon-large"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l3 12h14l3-12H2zM3 16l-1 4h20l-1-4"/></svg></div>
                                 <h3 class="intro-heading">ABOUT THIS SURVEY</h3>
@@ -644,9 +406,10 @@
                             <div class="navigation-buttons"><button type="button" class="btn-nav btn-next full-width" onclick="nextSection()">START SURVEY <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button></div>
                         </div>
 
-                        <!-- SECTION 2 -->
+                        <!-- SECTION 2: SCHOOL PROFILE -->
                         <div class="form-section" data-section="2">
                             <div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><div><h2 class="section-title">SECTION B: SCHOOL PROFILE</h2><p class="section-description">School identification and location details</p></div></div>
+
                             <div class="form-group"><label class="form-label">DISTRICT <span class="required">*</span></label><select class="form-select" name="district" id="district" required><option value="">Select District...</option></select><div class="cascade-count" id="count_district"></div><div class="field-error" id="error_district">Please select a district</div></div>
                             <div class="form-group"><label class="form-label">CHIEFDOM <span class="required">*</span></label><select class="form-select" name="chiefdom" id="chiefdom" required disabled><option value="">Select Chiefdom...</option></select><div class="cascade-count" id="count_chiefdom"></div><div class="field-error" id="error_chiefdom">Please select a chiefdom</div></div>
                             <div class="form-group"><label class="form-label">SECTION <span class="required">*</span></label><select class="form-select" name="section_loc" id="section_loc" required disabled><option value="">Select Section...</option></select><div class="cascade-count" id="count_section_loc"></div><div class="field-error" id="error_section_loc">Please select a section</div></div>
@@ -656,6 +419,7 @@
                             <div class="form-group"><label class="form-label">HEAD TEACHER NAME <span class="required">*</span></label><input type="text" class="form-input name-field" name="head_teacher" id="head_teacher" required><div class="field-error" id="error_head_teacher">Name must contain only letters</div></div>
                             <div class="form-group"><label class="form-label">HEAD TEACHER PHONE <span class="required">*</span></label><input type="tel" class="form-input" name="head_teacher_phone" id="head_teacher_phone" required pattern="[0-9]{9}" maxlength="9"><div class="field-hint">Enter 9-digit phone number</div><div class="field-error" id="error_head_teacher_phone">Please enter a valid 9-digit phone number</div></div>
                             <div class="form-group"><label class="form-label">DATE OF DISTRIBUTION <span class="required">*</span></label><input type="date" class="form-input" name="distribution_date" id="distribution_date" required><div class="field-error" id="error_distribution_date">This field is required</div></div>
+
                             <div class="navigation-buttons">
                                 <button type="button" class="btn-nav btn-back" onclick="previousSection()"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> BACK</button>
                                 <button type="button" class="btn-nav btn-draft" onclick="showDraftNameModal()"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> SAVE</button>
@@ -663,9 +427,11 @@
                             </div>
                         </div>
 
-                        <!-- SECTION 3 -->
+                        <!-- SECTION 3: CLASS ENROLLMENT & ITN DISTRIBUTION -->
                         <div class="form-section" data-section="3">
                             <div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div><div><h2 class="section-title">SECTION C: ENROLLMENT & ITN DISTRIBUTION</h2><p class="section-description">Enter enrollment and ITN data for each class</p></div></div>
+
+                            <!-- ITN RECEIVED IN SCHOOL -->
                             <div class="itn-received-block">
                                 <div class="itn-received-header"><svg class="block-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> ITNs RECEIVED IN SCHOOL</div>
                                 <div class="itn-received-content">
@@ -685,13 +451,84 @@
                                     </div>
                                 </div>
                             </div>
+
                             <div class="validation-note"><svg class="note-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>Validation Rule:</strong> Number of pupils who received ITNs cannot exceed the number enrolled.</div>
-                            <!-- Classes 1-5 -->
-                            <div class="class-block"><div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 1</div><div class="teacher-row"><div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c1_teacher_name" id="c1_teacher_name" required></div><div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c1_teacher_phone" id="c1_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c1_teacher_phone">Enter 9-digit number</div></div></div><div class="class-grid"><div class="form-group"><label class="form-label">Number of Boys in Class 1 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c1_boys" id="c1_boys" min="0" placeholder="0" required data-class="1" data-gender="boys"></div><div class="form-group"><label class="form-label">Boys in Class 1 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c1_boys_itn" id="c1_boys_itn" min="0" placeholder="0" required data-class="1" data-gender="boys" data-max-field="c1_boys"><div class="field-error" id="error_c1_boys_itn">Cannot exceed number of boys in Class 1</div></div><div class="form-group"><label class="form-label">Number of Girls in Class 1 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c1_girls" id="c1_girls" min="0" placeholder="0" required data-class="1" data-gender="girls"></div><div class="form-group"><label class="form-label">Girls in Class 1 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c1_girls_itn" id="c1_girls_itn" min="0" placeholder="0" required data-class="1" data-gender="girls" data-max-field="c1_girls"><div class="field-error" id="error_c1_girls_itn">Cannot exceed number of girls in Class 1</div></div></div></div>
-                            <div class="class-block"><div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 2</div><div class="teacher-row"><div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c2_teacher_name" id="c2_teacher_name" required></div><div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c2_teacher_phone" id="c2_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c2_teacher_phone">Enter 9-digit number</div></div></div><div class="class-grid"><div class="form-group"><label class="form-label">Number of Boys in Class 2 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c2_boys" id="c2_boys" min="0" placeholder="0" required data-class="2" data-gender="boys"></div><div class="form-group"><label class="form-label">Boys in Class 2 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c2_boys_itn" id="c2_boys_itn" min="0" placeholder="0" required data-class="2" data-gender="boys" data-max-field="c2_boys"><div class="field-error" id="error_c2_boys_itn">Cannot exceed number of boys in Class 2</div></div><div class="form-group"><label class="form-label">Number of Girls in Class 2 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c2_girls" id="c2_girls" min="0" placeholder="0" required data-class="2" data-gender="girls"></div><div class="form-group"><label class="form-label">Girls in Class 2 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c2_girls_itn" id="c2_girls_itn" min="0" placeholder="0" required data-class="2" data-gender="girls" data-max-field="c2_girls"><div class="field-error" id="error_c2_girls_itn">Cannot exceed number of girls in Class 2</div></div></div></div>
-                            <div class="class-block"><div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 3</div><div class="teacher-row"><div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c3_teacher_name" id="c3_teacher_name" required></div><div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c3_teacher_phone" id="c3_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c3_teacher_phone">Enter 9-digit number</div></div></div><div class="class-grid"><div class="form-group"><label class="form-label">Number of Boys in Class 3 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c3_boys" id="c3_boys" min="0" placeholder="0" required data-class="3" data-gender="boys"></div><div class="form-group"><label class="form-label">Boys in Class 3 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c3_boys_itn" id="c3_boys_itn" min="0" placeholder="0" required data-class="3" data-gender="boys" data-max-field="c3_boys"><div class="field-error" id="error_c3_boys_itn">Cannot exceed number of boys in Class 3</div></div><div class="form-group"><label class="form-label">Number of Girls in Class 3 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c3_girls" id="c3_girls" min="0" placeholder="0" required data-class="3" data-gender="girls"></div><div class="form-group"><label class="form-label">Girls in Class 3 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c3_girls_itn" id="c3_girls_itn" min="0" placeholder="0" required data-class="3" data-gender="girls" data-max-field="c3_girls"><div class="field-error" id="error_c3_girls_itn">Cannot exceed number of girls in Class 3</div></div></div></div>
-                            <div class="class-block"><div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 4</div><div class="teacher-row"><div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c4_teacher_name" id="c4_teacher_name" required></div><div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c4_teacher_phone" id="c4_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c4_teacher_phone">Enter 9-digit number</div></div></div><div class="class-grid"><div class="form-group"><label class="form-label">Number of Boys in Class 4 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c4_boys" id="c4_boys" min="0" placeholder="0" required data-class="4" data-gender="boys"></div><div class="form-group"><label class="form-label">Boys in Class 4 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c4_boys_itn" id="c4_boys_itn" min="0" placeholder="0" required data-class="4" data-gender="boys" data-max-field="c4_boys"><div class="field-error" id="error_c4_boys_itn">Cannot exceed number of boys in Class 4</div></div><div class="form-group"><label class="form-label">Number of Girls in Class 4 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c4_girls" id="c4_girls" min="0" placeholder="0" required data-class="4" data-gender="girls"></div><div class="form-group"><label class="form-label">Girls in Class 4 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c4_girls_itn" id="c4_girls_itn" min="0" placeholder="0" required data-class="4" data-gender="girls" data-max-field="c4_girls"><div class="field-error" id="error_c4_girls_itn">Cannot exceed number of girls in Class 4</div></div></div></div>
-                            <div class="class-block"><div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 5</div><div class="teacher-row"><div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c5_teacher_name" id="c5_teacher_name" required></div><div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c5_teacher_phone" id="c5_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c5_teacher_phone">Enter 9-digit number</div></div></div><div class="class-grid"><div class="form-group"><label class="form-label">Number of Boys in Class 5 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c5_boys" id="c5_boys" min="0" placeholder="0" required data-class="5" data-gender="boys"></div><div class="form-group"><label class="form-label">Boys in Class 5 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c5_boys_itn" id="c5_boys_itn" min="0" placeholder="0" required data-class="5" data-gender="boys" data-max-field="c5_boys"><div class="field-error" id="error_c5_boys_itn">Cannot exceed number of boys in Class 5</div></div><div class="form-group"><label class="form-label">Number of Girls in Class 5 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c5_girls" id="c5_girls" min="0" placeholder="0" required data-class="5" data-gender="girls"></div><div class="form-group"><label class="form-label">Girls in Class 5 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c5_girls_itn" id="c5_girls_itn" min="0" placeholder="0" required data-class="5" data-gender="girls" data-max-field="c5_girls"><div class="field-error" id="error_c5_girls_itn">Cannot exceed number of girls in Class 5</div></div></div></div>
+
+                            <!-- CLASS 1 -->
+                            <div class="class-block">
+                                <div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 1</div>
+                                <div class="teacher-row">
+                                    <div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c1_teacher_name" id="c1_teacher_name" required></div>
+                                    <div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c1_teacher_phone" id="c1_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c1_teacher_phone">Enter 9-digit number</div></div>
+                                </div>
+                                <div class="class-grid">
+                                    <div class="form-group"><label class="form-label">Number of Boys in Class 1 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c1_boys" id="c1_boys" min="0" placeholder="0" required data-class="1" data-gender="boys"></div>
+                                    <div class="form-group"><label class="form-label">Boys in Class 1 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c1_boys_itn" id="c1_boys_itn" min="0" placeholder="0" required data-class="1" data-gender="boys" data-max-field="c1_boys"><div class="field-error" id="error_c1_boys_itn">Cannot exceed number of boys in Class 1</div></div>
+                                    <div class="form-group"><label class="form-label">Number of Girls in Class 1 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c1_girls" id="c1_girls" min="0" placeholder="0" required data-class="1" data-gender="girls"></div>
+                                    <div class="form-group"><label class="form-label">Girls in Class 1 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c1_girls_itn" id="c1_girls_itn" min="0" placeholder="0" required data-class="1" data-gender="girls" data-max-field="c1_girls"><div class="field-error" id="error_c1_girls_itn">Cannot exceed number of girls in Class 1</div></div>
+                                </div>
+                            </div>
+
+                            <!-- CLASS 2 -->
+                            <div class="class-block">
+                                <div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 2</div>
+                                <div class="teacher-row">
+                                    <div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c2_teacher_name" id="c2_teacher_name" required></div>
+                                    <div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c2_teacher_phone" id="c2_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c2_teacher_phone">Enter 9-digit number</div></div>
+                                </div>
+                                <div class="class-grid">
+                                    <div class="form-group"><label class="form-label">Number of Boys in Class 2 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c2_boys" id="c2_boys" min="0" placeholder="0" required data-class="2" data-gender="boys"></div>
+                                    <div class="form-group"><label class="form-label">Boys in Class 2 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c2_boys_itn" id="c2_boys_itn" min="0" placeholder="0" required data-class="2" data-gender="boys" data-max-field="c2_boys"><div class="field-error" id="error_c2_boys_itn">Cannot exceed number of boys in Class 2</div></div>
+                                    <div class="form-group"><label class="form-label">Number of Girls in Class 2 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c2_girls" id="c2_girls" min="0" placeholder="0" required data-class="2" data-gender="girls"></div>
+                                    <div class="form-group"><label class="form-label">Girls in Class 2 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c2_girls_itn" id="c2_girls_itn" min="0" placeholder="0" required data-class="2" data-gender="girls" data-max-field="c2_girls"><div class="field-error" id="error_c2_girls_itn">Cannot exceed number of girls in Class 2</div></div>
+                                </div>
+                            </div>
+
+                            <!-- CLASS 3 -->
+                            <div class="class-block">
+                                <div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 3</div>
+                                <div class="teacher-row">
+                                    <div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c3_teacher_name" id="c3_teacher_name" required></div>
+                                    <div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c3_teacher_phone" id="c3_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c3_teacher_phone">Enter 9-digit number</div></div>
+                                </div>
+                                <div class="class-grid">
+                                    <div class="form-group"><label class="form-label">Number of Boys in Class 3 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c3_boys" id="c3_boys" min="0" placeholder="0" required data-class="3" data-gender="boys"></div>
+                                    <div class="form-group"><label class="form-label">Boys in Class 3 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c3_boys_itn" id="c3_boys_itn" min="0" placeholder="0" required data-class="3" data-gender="boys" data-max-field="c3_boys"><div class="field-error" id="error_c3_boys_itn">Cannot exceed number of boys in Class 3</div></div>
+                                    <div class="form-group"><label class="form-label">Number of Girls in Class 3 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c3_girls" id="c3_girls" min="0" placeholder="0" required data-class="3" data-gender="girls"></div>
+                                    <div class="form-group"><label class="form-label">Girls in Class 3 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c3_girls_itn" id="c3_girls_itn" min="0" placeholder="0" required data-class="3" data-gender="girls" data-max-field="c3_girls"><div class="field-error" id="error_c3_girls_itn">Cannot exceed number of girls in Class 3</div></div>
+                                </div>
+                            </div>
+
+                            <!-- CLASS 4 -->
+                            <div class="class-block">
+                                <div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 4</div>
+                                <div class="teacher-row">
+                                    <div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c4_teacher_name" id="c4_teacher_name" required></div>
+                                    <div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c4_teacher_phone" id="c4_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c4_teacher_phone">Enter 9-digit number</div></div>
+                                </div>
+                                <div class="class-grid">
+                                    <div class="form-group"><label class="form-label">Number of Boys in Class 4 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c4_boys" id="c4_boys" min="0" placeholder="0" required data-class="4" data-gender="boys"></div>
+                                    <div class="form-group"><label class="form-label">Boys in Class 4 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c4_boys_itn" id="c4_boys_itn" min="0" placeholder="0" required data-class="4" data-gender="boys" data-max-field="c4_boys"><div class="field-error" id="error_c4_boys_itn">Cannot exceed number of boys in Class 4</div></div>
+                                    <div class="form-group"><label class="form-label">Number of Girls in Class 4 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c4_girls" id="c4_girls" min="0" placeholder="0" required data-class="4" data-gender="girls"></div>
+                                    <div class="form-group"><label class="form-label">Girls in Class 4 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c4_girls_itn" id="c4_girls_itn" min="0" placeholder="0" required data-class="4" data-gender="girls" data-max-field="c4_girls"><div class="field-error" id="error_c4_girls_itn">Cannot exceed number of girls in Class 4</div></div>
+                                </div>
+                            </div>
+
+                            <!-- CLASS 5 -->
+                            <div class="class-block">
+                                <div class="class-header"><svg class="class-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg> CLASS 5</div>
+                                <div class="teacher-row">
+                                    <div class="form-group"><label class="form-label">Teacher Name <span class="required">*</span></label><input type="text" class="form-input name-field" name="c5_teacher_name" id="c5_teacher_name" required></div>
+                                    <div class="form-group"><label class="form-label">Teacher Phone <span class="required">*</span></label><input type="tel" class="form-input phone-field" name="c5_teacher_phone" id="c5_teacher_phone" required pattern="[0-9]{9}" maxlength="9" placeholder="9 digits"><div class="field-error" id="error_c5_teacher_phone">Enter 9-digit number</div></div>
+                                </div>
+                                <div class="class-grid">
+                                    <div class="form-group"><label class="form-label">Number of Boys in Class 5 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c5_boys" id="c5_boys" min="0" placeholder="0" required data-class="5" data-gender="boys"></div>
+                                    <div class="form-group"><label class="form-label">Boys in Class 5 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c5_boys_itn" id="c5_boys_itn" min="0" placeholder="0" required data-class="5" data-gender="boys" data-max-field="c5_boys"><div class="field-error" id="error_c5_boys_itn">Cannot exceed number of boys in Class 5</div></div>
+                                    <div class="form-group"><label class="form-label">Number of Girls in Class 5 <span class="required">*</span></label><input type="number" class="form-input enrollment-field" name="c5_girls" id="c5_girls" min="0" placeholder="0" required data-class="5" data-gender="girls"></div>
+                                    <div class="form-group"><label class="form-label">Girls in Class 5 that Received ITNs <span class="required">*</span></label><input type="number" class="form-input itn-field" name="c5_girls_itn" id="c5_girls_itn" min="0" placeholder="0" required data-class="5" data-gender="girls" data-max-field="c5_girls"><div class="field-error" id="error_c5_girls_itn">Cannot exceed number of girls in Class 5</div></div>
+                                </div>
+                            </div>
+
                             <div class="navigation-buttons">
                                 <button type="button" class="btn-nav btn-back" onclick="previousSection()"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> BACK</button>
                                 <button type="button" class="btn-nav btn-draft" onclick="showDraftNameModal()"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> SAVE</button>
@@ -699,29 +536,51 @@
                             </div>
                         </div>
 
-                        <!-- SECTION 4 -->
+                        <!-- SECTION 4: SUMMARY DASHBOARD -->
                         <div class="form-section" data-section="4">
                             <div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div><div><h2 class="section-title">SECTION D: SUMMARY DASHBOARD</h2><p class="section-description">Auto-calculated totals, proportions, and coverage statistics</p></div></div>
                             <div class="summary-note"><svg class="note-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg> All values below are calculated automatically from the data you entered.</div>
+
                             <div class="dashboard-block"><div class="dashboard-header"><svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> TOTAL ENROLLMENT</div>
-                                <div class="dashboard-cards"><div class="dash-card blue"><div class="dash-label">Total Boys in School</div><div class="dash-value" id="sum_total_boys">0</div><input type="hidden" name="total_boys" id="total_boys" value="0"></div><div class="dash-card pink"><div class="dash-label">Total Girls in School</div><div class="dash-value" id="sum_total_girls">0</div><input type="hidden" name="total_girls" id="total_girls" value="0"></div><div class="dash-card green"><div class="dash-label">Total Pupils in School</div><div class="dash-value" id="sum_total_pupils">0</div><input type="hidden" name="total_pupils" id="total_pupils" value="0"></div></div>
+                                <div class="dashboard-cards">
+                                    <div class="dash-card blue"><div class="dash-label">Total Boys in School</div><div class="dash-value" id="sum_total_boys">0</div><input type="hidden" name="total_boys" id="total_boys" value="0"></div>
+                                    <div class="dash-card pink"><div class="dash-label">Total Girls in School</div><div class="dash-value" id="sum_total_girls">0</div><input type="hidden" name="total_girls" id="total_girls" value="0"></div>
+                                    <div class="dash-card green"><div class="dash-label">Total Pupils in School</div><div class="dash-value" id="sum_total_pupils">0</div><input type="hidden" name="total_pupils" id="total_pupils" value="0"></div>
+                                </div>
                             </div>
+
                             <div class="dashboard-block"><div class="dashboard-header"><svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l3 12h14l3-12H2zM3 16l-1 4h20l-1-4"/></svg> TOTAL ITNs DISTRIBUTED</div>
-                                <div class="dashboard-cards"><div class="dash-card blue"><div class="dash-label">Total Boys Received ITNs</div><div class="dash-value" id="sum_boys_itn">0</div><input type="hidden" name="total_boys_itn" id="total_boys_itn" value="0"></div><div class="dash-card pink"><div class="dash-label">Total Girls Received ITNs</div><div class="dash-value" id="sum_girls_itn">0</div><input type="hidden" name="total_girls_itn" id="total_girls_itn" value="0"></div><div class="dash-card green"><div class="dash-label">Total Pupils Received ITNs</div><div class="dash-value" id="sum_total_itn">0</div><input type="hidden" name="total_itn" id="total_itn" value="0"></div><div class="dash-card large orange"><div class="dash-label">ITNs Remaining (Received - Distributed)</div><div class="dash-value" id="itns_remaining">0</div><input type="hidden" name="itns_remaining" id="itns_remaining_val" value="0"><div class="remaining-status" id="remaining_status"></div></div></div>
+                                <div class="dashboard-cards">
+                                    <div class="dash-card blue"><div class="dash-label">Total Boys Received ITNs</div><div class="dash-value" id="sum_boys_itn">0</div><input type="hidden" name="total_boys_itn" id="total_boys_itn" value="0"></div>
+                                    <div class="dash-card pink"><div class="dash-label">Total Girls Received ITNs</div><div class="dash-value" id="sum_girls_itn">0</div><input type="hidden" name="total_girls_itn" id="total_girls_itn" value="0"></div>
+                                    <div class="dash-card green"><div class="dash-label">Total Pupils Received ITNs</div><div class="dash-value" id="sum_total_itn">0</div><input type="hidden" name="total_itn" id="total_itn" value="0"></div>
+                                    <div class="dash-card large orange"><div class="dash-label">ITNs Remaining (Received - Distributed)</div><div class="dash-value" id="itns_remaining">0</div><input type="hidden" name="itns_remaining" id="itns_remaining_val" value="0"><div class="remaining-status" id="remaining_status"></div></div>
+                                </div>
                             </div>
+
                             <div class="dashboard-block"><div class="dashboard-header"><svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg> PROPORTION OF BOYS & GIRLS IN SCHOOL</div>
-                                <div class="dashboard-cards"><div class="dash-card blue"><div class="dash-label">Proportion of Boys</div><div class="dash-value" id="prop_boys">0%</div><input type="hidden" name="prop_boys" id="prop_boys_val" value="0"></div><div class="dash-card pink"><div class="dash-label">Proportion of Girls</div><div class="dash-value" id="prop_girls">0%</div><input type="hidden" name="prop_girls" id="prop_girls_val" value="0"></div></div>
+                                <div class="dashboard-cards">
+                                    <div class="dash-card blue"><div class="dash-label">Proportion of Boys</div><div class="dash-value" id="prop_boys">0%</div><input type="hidden" name="prop_boys" id="prop_boys_val" value="0"></div>
+                                    <div class="dash-card pink"><div class="dash-label">Proportion of Girls</div><div class="dash-value" id="prop_girls">0%</div><input type="hidden" name="prop_girls" id="prop_girls_val" value="0"></div>
+                                </div>
                                 <div class="gender-bar-container"><div class="gender-bar"><div class="gender-bar-boys" id="bar_boys"></div><div class="gender-bar-girls" id="bar_girls"></div></div><div class="gender-bar-legend"><span class="legend-boys">Boys</span><span class="legend-girls">Girls</span></div></div>
                             </div>
+
                             <div class="dashboard-block"><div class="dashboard-header"><svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> ITN COVERAGE RATES</div>
-                                <div class="dashboard-cards"><div class="dash-card blue"><div class="dash-label">Boys ITN Coverage</div><div class="dash-value" id="cov_boys">0%</div><input type="hidden" name="coverage_boys" id="coverage_boys" value="0"></div><div class="dash-card pink"><div class="dash-label">Girls ITN Coverage</div><div class="dash-value" id="cov_girls">0%</div><input type="hidden" name="coverage_girls" id="coverage_girls" value="0"></div><div class="dash-card green large"><div class="dash-label">Overall ITN Coverage</div><div class="dash-value big" id="cov_total">0%</div><input type="hidden" name="coverage_total" id="coverage_total" value="0"></div></div>
+                                <div class="dashboard-cards">
+                                    <div class="dash-card blue"><div class="dash-label">Boys ITN Coverage</div><div class="dash-value" id="cov_boys">0%</div><input type="hidden" name="coverage_boys" id="coverage_boys" value="0"></div>
+                                    <div class="dash-card pink"><div class="dash-label">Girls ITN Coverage</div><div class="dash-value" id="cov_girls">0%</div><input type="hidden" name="coverage_girls" id="coverage_girls" value="0"></div>
+                                    <div class="dash-card green large"><div class="dash-label">Overall ITN Coverage</div><div class="dash-value big" id="cov_total">0%</div><input type="hidden" name="coverage_total" id="coverage_total" value="0"></div>
+                                </div>
                             </div>
+
                             <div class="dashboard-block"><div class="dashboard-header"><svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3zM3 9h18M9 21V9"/></svg> CLASS-BY-CLASS BREAKDOWN</div>
-                                <div class="table-wrapper"><table class="breakdown-table"><thead><tr><th>CLASS</th><th>BOYS</th><th>BOYS ITN</th><th>GIRLS</th><th>GIRLS ITN</th><th>TOTAL</th><th>ITN</th><th>COV %</th></tr></thead><tbody id="breakdownTableBody"><tr><td>Class 1</td><td id="t1_b">0</td><td id="t1_bi">0</td><td id="t1_g">0</td><td id="t1_gi">0</td><td id="t1_t">0</td><td id="t1_ti">0</td><td id="t1_c">0%</td></tr><tr><td>Class 2</td><td id="t2_b">0</td><td id="t2_bi">0</td><td id="t2_g">0</td><td id="t2_gi">0</td><td id="t2_t">0</td><td id="t2_ti">0</td><td id="t2_c">0%</td></tr><tr><td>Class 3</td><td id="t3_b">0</td><td id="t3_bi">0</td><td id="t3_g">0</td><td id="t3_gi">0</td><td id="t3_t">0</td><td id="t3_ti">0</td><td id="t3_c">0%</td></tr><tr><td>Class 4</td><td id="t4_b">0</td><td id="t4_bi">0</td><td id="t4_g">0</td><td id="t4_gi">0</td><td id="t4_t">0</td><td id="t4_ti">0</td><td id="t4_c">0%</td></tr><tr><td>Class 5</td><td id="t5_b">0</td><td id="t5_bi">0</td><td id="t5_g">0</td><td id="t5_gi">0</td><td id="t5_t">0</td><td id="t5_ti">0</td><td id="t5_c">0%</td></tr><tr class="total-row"><td><strong>TOTAL</strong></td><td id="tt_b">0</td><td id="tt_bi">0</td><td id="tt_g">0</td><td id="tt_gi">0</td><td id="tt_t">0</td><td id="tt_ti">0</td><td id="tt_c">0%</td></tr></tbody></table></div>
-                            </div>
+                                <div class="table-wrapper"><table class="breakdown-table"><thead><tr><th>CLASS</th><th>BOYS</th><th>BOYS ITN</th><th>GIRLS</th><th>GIRLS ITN</th><th>TOTAL</th><th>ITN</th><th>COV %</th></tr></thead><tbody id="breakdownTableBody"><tr><td>Class 1</td><td id="t1_b">0</td><td id="t1_bi">0</td><td id="t1_g">0</td><td id="t1_gi">0</td><td id="t1_t">0</td><td id="t1_ti">0</td><td id="t1_c">0%</td></tr><tr><td>Class 2</td><td id="t2_b">0</td><td id="t2_bi">0</td><td id="t2_g">0</td><td id="t2_gi">0</td><td id="t2_t">0</td><td id="t2_ti">0</td><td id="t2_c">0%</td></tr><tr><td>Class 3</td><td id="t3_b">0</td><td id="t3_bi">0</td><td id="t3_g">0</td><td id="t3_gi">0</td><td id="t3_t">0</td><td id="t3_ti">0</td><td id="t3_c">0%</td></tr><tr><td>Class 4</td><td id="t4_b">0</td><td id="t4_bi">0</td><td id="t4_g">0</td><td id="t4_gi">0</td><td id="t4_t">0</td><td id="t4_ti">0</td><td id="t4_c">0%</td></tr><tr><td>Class 5</td><td id="t5_b">0</td><td id="t5_bi">0</td><td id="t5_g">0</td><td id="t5_gi">0</td><td id="t5_t">0</td><td id="t5_ti">0</td><td id="t5_c">0%</td></tr><tr class="total-row"><td><strong>TOTAL</strong></td><td id="tt_b">0</td><td id="tt_bi">0</td><td id="tt_g">0</td><td id="tt_gi">0</td><td id="tt_t">0</td><td id="tt_ti">0</td><td id="tt_c">0%</td></tr></tbody></table></div></div>
+
                             <div class="dashboard-block"><div class="dashboard-header"><svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg> VISUAL SUMMARY</div>
                                 <div class="charts-grid"><div class="chart-box"><div class="chart-title">Enrollment by Gender</div><canvas id="chartEnrollment"></canvas></div><div class="chart-box"><div class="chart-title">ITN Distribution by Gender</div><canvas id="chartITN"></canvas></div><div class="chart-box"><div class="chart-title">Coverage by Class</div><canvas id="chartCoverage"></canvas></div></div>
                             </div>
+
                             <div class="navigation-buttons">
                                 <button type="button" class="btn-nav btn-back" onclick="previousSection()"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> BACK</button>
                                 <button type="button" class="btn-nav btn-draft" onclick="showDraftNameModal()"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> SAVE</button>
@@ -729,14 +588,17 @@
                             </div>
                         </div>
 
-                        <!-- SECTION 5 -->
+                        <!-- SECTION 5: TEAM MEMBERS & SUBMISSION -->
                         <div class="form-section" data-section="5">
                             <div class="section-header"><div class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div><div><h2 class="section-title">SECTION E: TEAM MEMBERS & SUBMISSION</h2><p class="section-description">Survey team details, GPS location, and signatures</p></div></div>
+
                             <div class="form-group"><label class="form-label">SURVEY DATE <span class="required">*</span></label><input type="date" class="form-input" name="survey_date" id="survey_date" required><div class="field-error" id="error_survey_date">This field is required</div></div>
+
                             <div class="form-group"><label class="form-label">GPS LOCATION</label>
                                 <div class="gps-container"><div class="gps-status"><div class="gps-icon" id="gps_icon"></div><div><div class="gps-info" id="gps_status">Capturing GPS...</div><div class="gps-coords" id="gps_coords"></div></div></div><button type="button" class="gps-btn" onclick="captureGPS()"><svg class="retry-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> RETRY</button></div>
                                 <input type="hidden" name="gps_lat" id="gps_lat"><input type="hidden" name="gps_lng" id="gps_lng"><input type="hidden" name="gps_acc" id="gps_acc">
                             </div>
+
                             <div class="team-member-block required-member">
                                 <div class="team-member-header"><svg class="team-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> TEAM MEMBER 1 <span class="required">*</span> (Required)</div>
                                 <div class="team-member-grid">
@@ -745,9 +607,11 @@
                                 </div>
                                 <div class="form-group"><label class="form-label">Signature <span class="required">*</span></label>
                                     <div class="signature-box"><canvas id="sig1Canvas"></canvas><button type="button" class="sig-clear-btn" onclick="clearTeamSignature(1)"><svg class="clear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> Clear</button></div>
-                                    <input type="hidden" name="team1_signature" id="team1_signature" required><div class="field-error" id="error_team1_signature">Signature is required</div>
+                                    <input type="hidden" name="team1_signature" id="team1_signature" required>
+                                    <div class="field-error" id="error_team1_signature">Signature is required</div>
                                 </div>
                             </div>
+
                             <div class="team-member-block optional-member">
                                 <div class="team-member-header optional"><svg class="team-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> TEAM MEMBER 2 (Optional)</div>
                                 <div class="team-member-grid">
@@ -756,9 +620,10 @@
                                 </div>
                                 <div class="form-group"><label class="form-label">Signature</label>
                                     <div class="signature-box"><canvas id="sig2Canvas"></canvas><button type="button" class="sig-clear-btn" onclick="clearTeamSignature(2)"><svg class="clear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> Clear</button></div>
-                                    <input type="hidden" name="team2_signature" id="team2_signature"><div class="field-error" id="error_team2_signature">Signature is required</div>
+                                    <input type="hidden" name="team2_signature" id="team2_signature">
                                 </div>
                             </div>
+
                             <div class="team-member-block optional-member">
                                 <div class="team-member-header optional"><svg class="team-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> TEAM MEMBER 3 (Optional)</div>
                                 <div class="team-member-grid">
@@ -767,9 +632,10 @@
                                 </div>
                                 <div class="form-group"><label class="form-label">Signature</label>
                                     <div class="signature-box"><canvas id="sig3Canvas"></canvas><button type="button" class="sig-clear-btn" onclick="clearTeamSignature(3)"><svg class="clear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> Clear</button></div>
-                                    <input type="hidden" name="team3_signature" id="team3_signature"><div class="field-error" id="error_team3_signature">Signature is required</div>
+                                    <input type="hidden" name="team3_signature" id="team3_signature">
                                 </div>
                             </div>
+
                             <div class="navigation-buttons">
                                 <button type="button" class="btn-nav btn-back" onclick="previousSection()"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> BACK</button>
                                 <button type="button" class="btn-nav btn-draft" onclick="showDraftNameModal()"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> SAVE</button>
@@ -788,1079 +654,26 @@
                 <p class="footer-copy">&copy; 2025 Informatics Consultancy Firm-Sierra Leone (ICF-SL)</p>
             </div>
         </div>
+    </div><!-- /main-content -->
+
+    <!-- MODALS -->
+    <div class="modal-overlay" id="draftsModal">
+        <div class="modal-content"><div class="modal-header"><span class="modal-title"><svg class="modal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> SAVED DRAFTS</span><button class="modal-close" onclick="closeDraftsModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="modal-body" id="draftsModalBody"></div></div>
     </div>
 
-    <!-- ORIGINAL MODALS -->
-    <div class="modal-overlay" id="draftsModal"><div class="modal-content"><div class="modal-header"><span class="modal-title"><svg class="modal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> SAVED DRAFTS</span><button class="modal-close" onclick="closeDraftsModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="modal-body" id="draftsModalBody"></div></div></div>
-    <div class="modal-overlay" id="draftNameModal"><div class="modal-content small"><div class="modal-header yellow"><span class="modal-title"><svg class="modal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> SAVE DRAFT</span></div><div class="modal-body"><label class="form-label">DRAFT NAME (AUTO-GENERATED):</label><input type="text" class="form-input draft-name-readonly" id="draftNameInput" readonly><div class="draft-name-hint">Name is auto-generated from location selections</div><div class="modal-buttons"><button class="modal-btn cancel" onclick="cancelDraftName()">CANCEL</button><button class="modal-btn save" onclick="confirmSaveDraft()">SAVE</button></div></div></div></div>
-    <div class="modal-overlay" id="analysisModal"><div class="modal-content large"><div class="modal-header"><span class="modal-title"><svg class="modal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg> ITN DISTRIBUTION ANALYSIS</span><button class="modal-close" onclick="closeAnalysisModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="modal-body" id="analysisBody"></div></div></div>
+    <div class="modal-overlay" id="draftNameModal">
+        <div class="modal-content small"><div class="modal-header yellow"><span class="modal-title"><svg class="modal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> SAVE DRAFT</span></div>
+        <div class="modal-body"><label class="form-label">DRAFT NAME (AUTO-GENERATED):</label><input type="text" class="form-input draft-name-readonly" id="draftNameInput" readonly><div class="draft-name-hint">Name is auto-generated from location selections</div><div class="modal-buttons"><button class="modal-btn cancel" onclick="cancelDraftName()">CANCEL</button><button class="modal-btn save" onclick="confirmSaveDraft()">SAVE</button></div></div></div>
+    </div>
+
+    <div class="modal-overlay" id="analysisModal">
+        <div class="modal-content large"><div class="modal-header"><span class="modal-title"><svg class="modal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg> ITN DISTRIBUTION ANALYSIS</span><button class="modal-close" onclick="closeAnalysisModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="modal-body" id="analysisBody"></div></div>
+    </div>
+
     <div class="notification" id="notification"><span id="notificationText"></span></div>
 
-</div><!-- end surveyPanel -->
+    </div><!-- /appMain -->
 
-<!-- ═══════════════════════════════════════
-     LOGISTICS PANEL
-═══════════════════════════════════════ -->
-<div id="logisticsPanel">
-
-  <!-- ── LOGIN OVERLAY ── -->
-  <div id="logLoginOverlay">
-    <div class="log-login-box">
-      <div class="log-login-header">
-        <img src="https://github.com/mohamedsillahkanu/gdp-dashboard-2/raw/6c7463b0d5c3be150aafae695a4bcbbd8aeb1499/ICF-SL.jpg" alt="ICF-SL" class="log-login-logo" onerror="this.style.display='none'">
-        <div class="log-login-title">DMS → PHU LOGISTICS</div>
-        <div class="log-login-divider"></div>
-        <div class="log-login-sub">Staff Login — Scan ID QR Code or Enter Username Once Per Session</div>
-      </div>
-      <div class="log-group">
-        <label class="log-label">Username (from users.csv) <span style="color:#c0392b">*</span></label>
-        <input type="text" class="log-input" id="logLoginUser" placeholder="e.g. DMS-PL-01" autocomplete="off">
-      </div>
-      <div class="log-or">OR</div>
-      <button class="log-qr-btn" onclick="logOpenLoginQR()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        SCAN STAFF ID QR CODE
-      </button>
-      <div class="log-error" id="logLoginErr">Username not found in users.csv — check spelling or scan your QR code.</div>
-      <button class="log-btn" onclick="logDoLogin()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
-        LOGIN & CONTINUE
-      </button>
-      <p style="font-size:0.72rem;color:#9ba8b8;text-align:center;margin-top:10px;font-family:sans-serif;">Users and drivers are defined in <code>users.csv</code></p>
-    </div>
-  </div>
-
-  <!-- Login QR Modal -->
-  <div class="log-modal" id="logLoginQrModal">
-    <div class="log-modal-box">
-      <div class="log-modal-head">
-        <span class="log-modal-title">SCAN STAFF QR CODE</span>
-        <button class="log-modal-x" onclick="logCloseLoginQR()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      </div>
-      <div class="log-modal-body" style="text-align:center;">
-        <div style="position:relative;width:100%;max-width:280px;margin:0 auto 12px;border-radius:10px;overflow:hidden;border:3px solid #004080;">
-          <video id="logLoginQrVideo" autoplay playsinline style="width:100%;display:block;"></video>
-          <div class="log-scan-line"></div>
-          <div class="log-qr-corner tl"></div><div class="log-qr-corner tr"></div>
-          <div class="log-qr-corner bl"></div><div class="log-qr-corner br"></div>
-        </div>
-        <canvas id="logLoginQrCanvas" style="display:none;"></canvas>
-        <p style="font-size:0.8rem;color:#5a6677;font-family:sans-serif;">Point camera at your staff ID QR code.<br>QR must encode your username (e.g. <code>DMS-PL-01</code>).</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── TOP BAR (shown after login) ── -->
-  <div class="log-topbar" id="logTopbar" style="display:none;">
-    <div class="log-topbar-left">
-      <img src="https://github.com/mohamedsillahkanu/gdp-dashboard-2/raw/6c7463b0d5c3be150aafae695a4bcbbd8aeb1499/ICF-SL.jpg" alt="ICF-SL" class="log-topbar-logo" onerror="this.style.display='none'">
-      <div>
-        <div class="log-topbar-title">LOGISTICS — DMS TO PHU</div>
-        <div class="log-topbar-sub">ITN Dispatch · ICF-SL / NMCP Sierra Leone</div>
-      </div>
-    </div>
-    <div class="log-topbar-right">
-      <div class="log-staff-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span class="log-staff-badge-text" id="logStaffBadge"></span>
-      </div>
-      <button class="log-logout-btn" onclick="logDoLogout()" title="Logout">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-      </button>
-    </div>
-  </div>
-
-  <!-- ── SUB TABS (shown after login) ── -->
-  <div class="log-sub-tabs" id="logSubTabs" style="display:none;">
-    <button class="log-sub-tab active" id="logTabDispatch" onclick="logSwitchTab('dispatch')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H5a2 2 0 00-2 2v0a2 2 0 002 2h14a2 2 0 002-2v0a2 2 0 00-2-2h-4M12 3v14M5 10l7-7 7 7"/></svg>
-      NEW DISPATCH
-    </button>
-    <button class="log-sub-tab" id="logTabRecords" onclick="logSwitchTab('records')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      RECORDS &amp; SUMMARY
-      <span class="log-sub-badge" id="logRecBadge">0</span>
-    </button>
-  </div>
-
-  <!-- ── MAIN CONTENT AREA (shown after login) ── -->
-  <div id="logMainArea" style="display:none;">
-  <div class="log-wrap">
-
-    <!-- DISPATCH PANEL -->
-    <div class="log-panel active" id="logPanelDispatch">
-
-      <!-- STEP TRACK -->
-      <div class="log-step-track">
-        <div class="log-step-item"><div class="log-step-circle active" id="lsc1">1</div><div class="log-step-line" id="lsl1"></div></div>
-        <div class="log-step-item"><div class="log-step-circle" id="lsc2">2</div><div class="log-step-line" id="lsl2"></div></div>
-        <div class="log-step-item"><div class="log-step-circle" id="lsc3">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        </div></div>
-      </div>
-      <div class="log-step-labels">
-        <span class="log-step-lbl active" id="lsl-1">Dispatch Details</span>
-        <span class="log-step-lbl" id="lsl-2">Driver Info</span>
-        <span class="log-step-lbl" id="lsl-3">Scan &amp; Submit</span>
-      </div>
-
-      <!-- ── STEP 1 ── -->
-      <div id="logStep1">
-        <div class="log-card">
-          <div class="log-card-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span class="log-card-title">AUTO-FILLED DISPATCH INFO</span>
-          </div>
-          <div class="log-card-body">
-            <div class="log-row c3">
-              <div class="log-form-group"><label class="log-form-label">Date &amp; Time</label><input class="log-form-input" readonly id="logAutoDate"></div>
-              <div class="log-form-group"><label class="log-form-label">DMS Staff</label><input class="log-form-input" readonly id="logAutoStaff"></div>
-              <div class="log-form-group"><label class="log-form-label">Dispatch ID</label><input class="log-form-input" readonly id="logAutoId" style="font-family:'Oswald',sans-serif;font-size:0.82rem;letter-spacing:0.05em;"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="log-card">
-          <div class="log-card-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span class="log-card-title">DISPATCH DESTINATION</span>
-          </div>
-          <div class="log-card-body">
-            <div class="log-row c2">
-              <div class="log-form-group">
-                <label class="log-form-label">District <span class="log-req">*</span></label>
-                <select class="log-form-select" id="logDistrict" onchange="logLoadPHUs()">
-                  <option value="">— Select District —</option>
-                  <option>Port Loko</option><option>Pujehun</option>
-                  <option>Koinadugu</option><option>Bonthe</option>
-                </select>
-                <div class="log-ferr" id="logErrDist">Required</div>
-              </div>
-              <div class="log-form-group">
-                <label class="log-form-label">PHU / Health Facility <span class="log-req">*</span></label>
-                <select class="log-form-select" id="logPHU" disabled>
-                  <option value="">— Select District First —</option>
-                </select>
-                <div class="log-ferr" id="logErrPHU">Required</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="log-card">
-          <div class="log-card-header gold">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
-            <span class="log-card-title">ITN QUANTITIES TO DISPATCH</span>
-          </div>
-          <div class="log-card-body">
-            <div class="log-itn-block">
-              <div class="log-itn-block-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                ENTER QUANTITIES BY NET TYPE
-              </div>
-              <div class="log-row c2">
-                <div class="log-form-group">
-                  <label class="log-form-label">IG2 (Interceptor G2) ITNs <span class="log-req">*</span></label>
-                  <input type="number" class="log-form-input" id="logQtyIG2" min="0" placeholder="0" oninput="logCalcTotal()">
-                  <div class="log-hint">Number of IG2 nets</div>
-                  <div class="log-ferr" id="logErrIG2">Enter 0 or more</div>
-                </div>
-                <div class="log-form-group">
-                  <label class="log-form-label">PBO (Piperonyl Butoxide) ITNs <span class="log-req">*</span></label>
-                  <input type="number" class="log-form-input" id="logQtyPBO" min="0" placeholder="0" oninput="logCalcTotal()">
-                  <div class="log-hint">Number of PBO nets</div>
-                  <div class="log-ferr" id="logErrPBO">Enter 0 or more</div>
-                </div>
-              </div>
-              <div class="log-itn-total">
-                <span class="log-itn-total-label">TOTAL ITNs TO DISPATCH:</span>
-                <span class="log-itn-total-val" id="logTotalITN">0</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="log-btn-row">
-          <button class="log-btn-action lba-navy" onclick="logGoStep2()">
-            NEXT — DRIVER INFO
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- ── STEP 2 ── -->
-      <div id="logStep2" style="display:none;">
-        <div class="log-card">
-          <div class="log-card-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M3 21a9 9 0 0118 0"/></svg>
-            <span class="log-card-title">DRIVER INFORMATION</span>
-          </div>
-          <div class="log-card-body">
-            <div class="log-validate-note">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-              Driver must be registered in <strong>users.csv</strong> with role <em>Driver</em>. Their QR scan in Step 3 will validate their identity against the registry.
-            </div>
-            <div class="log-row c2">
-              <div class="log-form-group">
-                <label class="log-form-label">First Name <span class="log-req">*</span></label>
-                <input type="text" class="log-form-input" id="logDrvFirst" placeholder="First name" oninput="logUpdatePlatePrev()">
-                <div class="log-ferr" id="logErrDrvFirst">Required — letters only</div>
-              </div>
-              <div class="log-form-group">
-                <label class="log-form-label">Last Name <span class="log-req">*</span></label>
-                <input type="text" class="log-form-input" id="logDrvLast" placeholder="Last name" oninput="logUpdatePlatePrev()">
-                <div class="log-ferr" id="logErrDrvLast">Required — letters only</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="log-card">
-          <div class="log-card-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="6" width="22" height="12" rx="2"/></svg>
-            <span class="log-card-title">VEHICLE REGISTRATION</span>
-          </div>
-          <div class="log-card-body">
-            <div style="background:#fff0dc;border:1px solid #f0b04a;border-radius:7px;padding:9px 13px;margin-bottom:12px;font-size:0.79rem;color:#d4700a;font-family:sans-serif;display:flex;align-items:center;gap:6px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              Format: exactly 3 uppercase letters + hyphen + exactly 3 digits (e.g. <strong>ABC-123</strong>)
-            </div>
-            <div class="log-row c2">
-              <div class="log-form-group">
-                <label class="log-form-label">Vehicle Letters (3) <span class="log-req">*</span></label>
-                <input type="text" class="log-form-input up" id="logVehL" maxlength="3" placeholder="ABC" oninput="this.value=this.value.replace(/[^a-zA-Z]/g,'').toUpperCase().slice(0,3);logUpdatePlatePrev()">
-                <div class="log-hint">Exactly 3 uppercase letters</div>
-                <div class="log-ferr" id="logErrVL">Exactly 3 letters required</div>
-              </div>
-              <div class="log-form-group">
-                <label class="log-form-label">Vehicle Numbers (3) <span class="log-req">*</span></label>
-                <input type="text" class="log-form-input up" id="logVehN" maxlength="3" placeholder="123" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,3);logUpdatePlatePrev()">
-                <div class="log-hint">Exactly 3 digits</div>
-                <div class="log-ferr" id="logErrVN">Exactly 3 digits required</div>
-              </div>
-            </div>
-            <div class="log-plate-preview">
-              <span class="log-plate-label">PLATE PREVIEW</span>
-              <span class="log-plate-val" id="logPlatePrev">— — —</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="log-btn-row" style="justify-content:space-between;">
-          <button class="log-btn-action lba-outline" onclick="logGoStep1()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> BACK
-          </button>
-          <button class="log-btn-action lba-navy" onclick="logGoStep3()">
-            NEXT — SCAN DRIVER ID
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- ── STEP 3 ── -->
-      <div id="logStep3" style="display:none;">
-        <div class="log-card">
-          <div class="log-card-header green">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            <span class="log-card-title">SCAN &amp; VERIFY DRIVER ID QR CODE</span>
-          </div>
-          <div class="log-card-body">
-            <div class="log-qr-wrap">
-              <div class="log-qr-icon-wrap">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-              </div>
-              <div class="log-qr-title">Driver ID Verification</div>
-              <div class="log-qr-sub">Scan the driver's QR code. The system will verify their identity, assigned district, and vehicle against <code>users.csv</code>.</div>
-
-              <div id="logQrVideoContainer">
-                <video id="logQrVideo" autoplay playsinline></video>
-                <div class="log-scan-line"></div>
-                <div class="log-qr-corner tl"></div><div class="log-qr-corner tr"></div>
-                <div class="log-qr-corner bl"></div><div class="log-qr-corner br"></div>
-              </div>
-              <canvas id="logQrCanvas"></canvas>
-
-              <div class="log-qr-result" id="logQrResult"></div>
-              <div class="log-driver-verified-card" id="logDriverCard" style="display:none;">
-                <div class="log-driver-verified-title">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                  DRIVER VERIFIED FROM REGISTRY
-                </div>
-                <div class="log-driver-info-row"><b>Name:</b> <span id="logDrvVerName"></span></div>
-                <div class="log-driver-info-row"><b>Username:</b> <span id="logDrvVerUser"></span></div>
-                <div class="log-driver-info-row"><b>Staff ID:</b> <span id="logDrvVerId"></span></div>
-                <div class="log-driver-info-row"><b>District:</b> <span id="logDrvVerDist"></span></div>
-                <div class="log-driver-info-row"><b>Registered Vehicle:</b> <span id="logDrvVerVeh"></span></div>
-                <div class="log-driver-info-row"><b>Phone:</b> <span id="logDrvVerPhone"></span></div>
-              </div>
-
-              <div style="display:flex;gap:8px;justify-content:center;margin:14px 0;flex-wrap:wrap;">
-                <button class="log-btn-action lba-navy lba-sm" id="logBtnStartScan" onclick="logStartQR()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                  START CAMERA SCAN
-                </button>
-                <button class="log-btn-action lba-outline lba-sm" id="logBtnStopScan" onclick="logStopQR()" style="display:none;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-                  STOP
-                </button>
-              </div>
-
-              <div class="log-qr-manual">
-                <input type="text" id="logManualUser" placeholder="Or type driver username manually (e.g. DRV-PL-01)...">
-                <button class="log-btn-action lba-gold lba-sm" onclick="logSetManualDriver()">VERIFY</button>
-              </div>
-            </div>
-
-            <!-- DISPATCH REVIEW -->
-            <div class="log-review-box">
-              <div class="log-review-title">DISPATCH SUMMARY REVIEW</div>
-              <div class="log-review-grid" id="logReviewGrid"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="log-btn-row" style="justify-content:space-between;">
-          <button class="log-btn-action lba-outline" onclick="logGoStep2()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> BACK
-          </button>
-          <button class="log-btn-action lba-submit" id="logBtnSubmit" onclick="logSubmitDispatch()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-            SUBMIT DISPATCH TO GOOGLE SHEETS
-          </button>
-        </div>
-      </div>
-
-      <!-- ── STEP 4: SUCCESS ── -->
-      <div id="logStep4" style="display:none;">
-        <div class="log-card">
-          <div class="log-card-body">
-            <div class="log-success-wrap">
-              <div class="log-success-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
-              <div class="log-success-title">DISPATCH SUBMITTED!</div>
-              <div class="log-success-sub">Record saved and submitted to Google Sheets.</div>
-              <div class="log-success-id" id="logSuccessId"></div>
-              <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-                <button class="log-btn-action lba-navy" onclick="logNewDispatch()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  NEW DISPATCH
-                </button>
-                <button class="log-btn-action lba-outline" onclick="logSwitchTab('records')">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
-                  VIEW RECORDS
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div><!-- end logPanelDispatch -->
-
-    <!-- RECORDS PANEL -->
-    <div class="log-panel" id="logPanelRecords">
-
-      <div class="log-stats-grid">
-        <div class="log-stat-card"><div class="log-stat-label">Total Dispatches</div><div class="log-stat-value" id="lsTotal">0</div><div class="log-stat-sub">All submissions</div></div>
-        <div class="log-stat-card g"><div class="log-stat-label">Total IG2 Dispatched</div><div class="log-stat-value" id="lsIG2">0</div><div class="log-stat-sub">Interceptor G2 nets</div></div>
-        <div class="log-stat-card gr"><div class="log-stat-label">Total PBO Dispatched</div><div class="log-stat-value" id="lsPBO">0</div><div class="log-stat-sub">PBO nets</div></div>
-        <div class="log-stat-card or"><div class="log-stat-label">PHUs Dispatched To</div><div class="log-stat-value" id="lsPHUs">0</div><div class="log-stat-sub">Unique facilities</div></div>
-        <div class="log-stat-card re"><div class="log-stat-label">PHUs Remaining</div><div class="log-stat-value" id="lsRemaining">0</div><div class="log-stat-sub">Not yet dispatched</div></div>
-      </div>
-
-      <div class="log-card">
-        <div class="log-card-header">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-          <span class="log-card-title">DISTRICT DISPATCH PROGRESS</span>
-        </div>
-        <div class="log-card-body" id="logDistProgress">
-          <p style="color:#9ba8b8;font-size:0.84rem;text-align:center;padding:18px 0;font-family:sans-serif;">No dispatches yet.</p>
-        </div>
-      </div>
-
-      <div class="log-card">
-        <div class="log-card-header">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span class="log-card-title">PHU COVERAGE — DISPATCHED vs REMAINING</span>
-        </div>
-        <div class="log-card-body">
-          <div class="log-dist-grid" id="logPHUGrid">
-            <p style="color:#9ba8b8;font-size:0.84rem;text-align:center;padding:18px 0;font-family:sans-serif;grid-column:1/-1;">No dispatches yet.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="log-card">
-        <div class="log-card-header">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H5a2 2 0 00-2 2v2h18v-2a2 2 0 00-2-2h-4M12 3v14"/></svg>
-          <span class="log-card-title">ALL DISPATCH RECORDS</span>
-          <div class="log-card-header-actions">
-            <button class="log-btn-action lba-sm" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);" onclick="logDownloadCSV()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-              EXPORT CSV
-            </button>
-          </div>
-        </div>
-        <div class="log-card-body" style="padding:0;">
-          <div class="log-tbl-wrap">
-            <table class="log-tbl">
-              <thead><tr>
-                <th>Dispatch ID</th><th>Date/Time</th><th>District</th><th>PHU</th>
-                <th>IG2</th><th>PBO</th><th>Total</th>
-                <th>Driver</th><th>Username</th><th>Staff ID</th><th>Vehicle</th><th>Driver ID Verified</th>
-                <th>DMS Staff</th><th>Status</th>
-              </tr></thead>
-              <tbody id="logRecordsBody">
-                <tr><td colspan="14" style="text-align:center;padding:28px;color:#9ba8b8;font-family:sans-serif;">No dispatch records yet.</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div><!-- end logPanelRecords -->
-
-  </div><!-- end log-wrap -->
-  </div><!-- end logMainArea -->
-
-  <div class="log-toast" id="logToast"></div>
-
-  <div class="log-footer">
-    <strong>ICF-SL</strong> · Informatics Consultancy Firm — Sierra Leone &nbsp;|&nbsp;
-    Logistics Module — DMS to PHU ITN Dispatch &nbsp;|&nbsp; &copy; 2025
-  </div>
-</div><!-- end logisticsPanel -->
-
-<script src="script.js"></script>
-
-<script>
-/* ═══════════════════════════════════════════════════════════
-   CONFIG — replace with your actual Google Apps Script URL
-═══════════════════════════════════════════════════════════ */
-const LOG_SHEETS_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec';
-
-/* ═══════════════════════════════════════════════════════════
-   PHU DATA
-═══════════════════════════════════════════════════════════ */
-const LOG_PHU_DATA = {
-  'Port Loko': [
-    'Port Loko Government Hospital','Lungi Community Health Centre','Mange Community Health Centre',
-    'Maforki Community Health Centre','Sanda Tendaren CHC','Kaffu Bullom Community Health Centre',
-    'Bureh Kasseh Maconteh CHC','Lokomasama Community Health Centre','Magbema Community Health Centre',
-    'Tinkatupa Community Health Centre','Rokupa CHC','Masimba CHC','Koya Rural CHC',
-    'Gbanti Kamaranka CHC','Buya Romende CHC','Dibia CHC','Tonko Limba CHC','Biriwa Limba CHC'
-  ],
-  'Pujehun': [
-    'Pujehun Government Hospital','Barri Community Health Centre','Soro Gbema Community Health Centre',
-    'Malen Community Health Centre','Kpaka Community Health Centre','Gallinas Perri Community Health Centre',
-    'Moa Community Health Centre','Makpele Community Health Centre','Valunia CHC','Sowa CHC',
-    'Panga Kabonde CHC','Bumpe Ngao CHC','Futa CHC','Wonde CHC'
-  ],
-  'Koinadugu': [
-    'Kabala Government Hospital','Diang Community Health Centre','Sulima Community Health Centre',
-    'Neini Community Health Centre','Sengbe Community Health Centre','Mongo Community Health Centre',
-    'Gbane Community Health Centre','Nieni Community Health Centre','Dembelia Sinkunia CHC',
-    'Wara Wara Bafodia CHC','Mongo Bendugu CHC','Kasunko CHC','Folosaba Dembelia CHC','Gbane Kandor CHC'
-  ],
-  'Bonthe': [
-    'Bonthe Government Hospital','Sogbini Community Health Centre','Jong Community Health Centre',
-    'Bonthe Urban Community Health Centre','Yawri Bay CHC','Shenge Community Health Centre',
-    'Bendu-Cha CHC','Bumpeh CHC','Nongoba Bullom CHC','Dema CHC','Imperri CHC','Kongbora CHC'
-  ]
-};
-
-/* ═══════════════════════════════════════════════════════════
-   STATE
-═══════════════════════════════════════════════════════════ */
-let logUsers = [];           // loaded from users.csv
-let logStaff = null;         // currently logged-in staff
-let logRecords = JSON.parse(localStorage.getItem('log_dispatch_records') || '[]');
-let logCurrentDispatch = {};
-let logQrStream = null;
-let logLoginQrStream = null;
-let logQrInterval = null;
-let logLoginQrInterval = null;
-let logVerifiedDriver = null;
-
-/* ═══════════════════════════════════════════════════════════
-   MAIN TAB SWITCH
-═══════════════════════════════════════════════════════════ */
-function switchMainTab(tab) {
-  document.getElementById('surveyPanel').style.display = tab === 'survey' ? 'block' : 'none';
-  document.getElementById('logisticsPanel').style.display = tab === 'logistics' ? 'block' : 'none';
-  document.getElementById('mainTabSurvey').className = 'main-tab-btn' + (tab === 'survey' ? ' active' : '');
-  document.getElementById('mainTabLogistics').className = 'main-tab-btn' + (tab === 'logistics' ? ' active' : '');
-  if (tab === 'logistics' && logUsers.length === 0) logLoadUsersCSV();
-}
-
-/* ═══════════════════════════════════════════════════════════
-   LOAD USERS.CSV
-═══════════════════════════════════════════════════════════ */
-function logLoadUsersCSV() {
-  fetch('users.csv')
-    .then(r => r.text())
-    .then(csv => {
-      const parsed = Papa.parse(csv.trim(), { header: true, skipEmptyLines: true });
-      logUsers = parsed.data;
-      // Check if already logged in via sessionStorage
-      const saved = sessionStorage.getItem('log_staff');
-      if (saved) {
-        logStaff = JSON.parse(saved);
-        logShowApp();
-      }
-    })
-    .catch(() => {
-      // Fallback: use hardcoded users if CSV not found
-      logUsers = logFallbackUsers();
-      const saved = sessionStorage.getItem('log_staff');
-      if (saved) { logStaff = JSON.parse(saved); logShowApp(); }
-      logShowToast('users.csv not found — using built-in user list.', 'warn');
-    });
-}
-
-function logFallbackUsers() {
-  return [
-    {username:'DMS-PL-01',full_name:'Mohamed Kamara',role:'DMS Staff',district:'Port Loko',staff_id:'SL-DMS-PL-01',phone:'076123401',vehicle_letters:'',vehicle_numbers:''},
-    {username:'DMS-PL-02',full_name:'Fatima Koroma',role:'DMS Staff',district:'Port Loko',staff_id:'SL-DMS-PL-02',phone:'076123402',vehicle_letters:'',vehicle_numbers:''},
-    {username:'DMS-PUJ-01',full_name:'Ibrahim Sesay',role:'DMS Staff',district:'Pujehun',staff_id:'SL-DMS-PUJ-01',phone:'076234501',vehicle_letters:'',vehicle_numbers:''},
-    {username:'DMS-PUJ-02',full_name:'Aminata Bangura',role:'DMS Staff',district:'Pujehun',staff_id:'SL-DMS-PUJ-02',phone:'076234502',vehicle_letters:'',vehicle_numbers:''},
-    {username:'DMS-KOI-01',full_name:'Samuel Turay',role:'DMS Staff',district:'Koinadugu',staff_id:'SL-DMS-KOI-01',phone:'076345601',vehicle_letters:'',vehicle_numbers:''},
-    {username:'DMS-KOI-02',full_name:'Mariama Conteh',role:'DMS Staff',district:'Koinadugu',staff_id:'SL-DMS-KOI-02',phone:'076345602',vehicle_letters:'',vehicle_numbers:''},
-    {username:'DMS-BON-01',full_name:'Lansana Fofanah',role:'DMS Staff',district:'Bonthe',staff_id:'SL-DMS-BON-01',phone:'076456701',vehicle_letters:'',vehicle_numbers:''},
-    {username:'DMS-BON-02',full_name:'Hawa Jalloh',role:'DMS Staff',district:'Bonthe',staff_id:'SL-DMS-BON-02',phone:'076456702',vehicle_letters:'',vehicle_numbers:''},
-    {username:'DMS-HQ-01',full_name:'Alpha Kamara',role:'DMS Staff',district:'All Districts',staff_id:'SL-DMS-HQ-01',phone:'076000101',vehicle_letters:'',vehicle_numbers:''},
-    {username:'DMS-HQ-02',full_name:'Isata Mansaray',role:'DMS Staff',district:'All Districts',staff_id:'SL-DMS-HQ-02',phone:'076000102',vehicle_letters:'',vehicle_numbers:''},
-    {username:'DRV-PL-01',full_name:'Abdul Conteh',role:'Driver',district:'Port Loko',staff_id:'SL-DRV-PL-01',phone:'076567801',vehicle_letters:'ABC',vehicle_numbers:'123'},
-    {username:'DRV-PL-02',full_name:'Lansana Turay',role:'Driver',district:'Port Loko',staff_id:'SL-DRV-PL-02',phone:'076567802',vehicle_letters:'DEF',vehicle_numbers:'456'},
-    {username:'DRV-PL-03',full_name:'Mohamed Bah',role:'Driver',district:'Port Loko',staff_id:'SL-DRV-PL-03',phone:'076567803',vehicle_letters:'GHI',vehicle_numbers:'789'},
-    {username:'DRV-PL-04',full_name:'Sorie Koroma',role:'Driver',district:'Port Loko',staff_id:'SL-DRV-PL-04',phone:'076567804',vehicle_letters:'JKL',vehicle_numbers:'012'},
-    {username:'DRV-PL-05',full_name:'Emmanuel Kamara',role:'Driver',district:'Port Loko',staff_id:'SL-DRV-PL-05',phone:'076567805',vehicle_letters:'MNO',vehicle_numbers:'345'},
-    {username:'DRV-PUJ-01',full_name:'Brima Sesay',role:'Driver',district:'Pujehun',staff_id:'SL-DRV-PUJ-01',phone:'076678901',vehicle_letters:'PQR',vehicle_numbers:'678'},
-    {username:'DRV-PUJ-02',full_name:'Foday Bangura',role:'Driver',district:'Pujehun',staff_id:'SL-DRV-PUJ-02',phone:'076678902',vehicle_letters:'STU',vehicle_numbers:'901'},
-    {username:'DRV-PUJ-03',full_name:'Hassan Conteh',role:'Driver',district:'Pujehun',staff_id:'SL-DRV-PUJ-03',phone:'076678903',vehicle_letters:'VWX',vehicle_numbers:'234'},
-    {username:'DRV-PUJ-04',full_name:'Ibrahim Kargbo',role:'Driver',district:'Pujehun',staff_id:'SL-DRV-PUJ-04',phone:'076678904',vehicle_letters:'YZA',vehicle_numbers:'567'},
-    {username:'DRV-KOI-01',full_name:'Joseph Turay',role:'Driver',district:'Koinadugu',staff_id:'SL-DRV-KOI-01',phone:'076789001',vehicle_letters:'BCD',vehicle_numbers:'890'},
-    {username:'DRV-KOI-02',full_name:'Kalilu Fofanah',role:'Driver',district:'Koinadugu',staff_id:'SL-DRV-KOI-02',phone:'076789002',vehicle_letters:'EFG',vehicle_numbers:'123'},
-    {username:'DRV-KOI-03',full_name:'Lamin Jalloh',role:'Driver',district:'Koinadugu',staff_id:'SL-DRV-KOI-03',phone:'076789003',vehicle_letters:'HIJ',vehicle_numbers:'456'},
-    {username:'DRV-KOI-04',full_name:'Momoh Kamara',role:'Driver',district:'Koinadugu',staff_id:'SL-DRV-KOI-04',phone:'076789004',vehicle_letters:'KLM',vehicle_numbers:'789'},
-    {username:'DRV-BON-01',full_name:'Nathaniel Sesay',role:'Driver',district:'Bonthe',staff_id:'SL-DRV-BON-01',phone:'076890101',vehicle_letters:'NOP',vehicle_numbers:'012'},
-    {username:'DRV-BON-02',full_name:'Osman Bangura',role:'Driver',district:'Bonthe',staff_id:'SL-DRV-BON-02',phone:'076890102',vehicle_letters:'QRS',vehicle_numbers:'345'},
-    {username:'DRV-BON-03',full_name:'Patrick Koroma',role:'Driver',district:'Bonthe',staff_id:'SL-DRV-BON-03',phone:'076890103',vehicle_letters:'TUV',vehicle_numbers:'678'},
-    {username:'DRV-BON-04',full_name:'Rashid Conteh',role:'Driver',district:'Bonthe',staff_id:'SL-DRV-BON-04',phone:'076890104',vehicle_letters:'WXY',vehicle_numbers:'901'},
-  ];
-}
-
-function logFindUser(username) {
-  const u = username.trim().toUpperCase();
-  return logUsers.find(row => (row.username || '').trim().toUpperCase() === u) || null;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   LOGIN
-═══════════════════════════════════════════════════════════ */
-function logDoLogin() {
-  const uname = document.getElementById('logLoginUser').value.trim();
-  if (!uname) { logShowLoginErr('Please enter your username.'); return; }
-  if (logUsers.length === 0) { logLoadUsersCSV(); logShowLoginErr('Loading user registry — please try again.'); return; }
-  const user = logFindUser(uname);
-  if (!user) { logShowLoginErr('Username not found in users.csv — check spelling or scan your QR code.'); return; }
-  if (user.role && user.role.toLowerCase().includes('driver')) {
-    logShowLoginErr('Drivers cannot log in as DMS staff. Use a DMS staff username.'); return;
-  }
-  logStaff = user;
-  sessionStorage.setItem('log_staff', JSON.stringify(logStaff));
-  logShowApp();
-}
-
-function logShowLoginErr(msg) {
-  const el = document.getElementById('logLoginErr');
-  el.textContent = msg; el.style.display = 'block';
-}
-
-function logShowApp() {
-  document.getElementById('logLoginOverlay').style.display = 'none';
-  document.getElementById('logTopbar').style.display = 'flex';
-  document.getElementById('logSubTabs').style.display = 'flex';
-  document.getElementById('logMainArea').style.display = 'block';
-  document.getElementById('logStaffBadge').textContent = logStaff.full_name + ' · ' + logStaff.district;
-  logInitDispatch();
-  logUpdateBadge();
-}
-
-function logDoLogout() {
-  sessionStorage.removeItem('log_staff');
-  logStaff = null; logVerifiedDriver = null;
-  logStopQR(); logStopLoginQR();
-  document.getElementById('logLoginOverlay').style.display = 'flex';
-  document.getElementById('logTopbar').style.display = 'none';
-  document.getElementById('logSubTabs').style.display = 'none';
-  document.getElementById('logMainArea').style.display = 'none';
-  document.getElementById('logLoginUser').value = '';
-  document.getElementById('logLoginErr').style.display = 'none';
-}
-
-/* Login QR */
-function logOpenLoginQR() {
-  document.getElementById('logLoginQrModal').classList.add('open');
-  logStartLoginQR();
-}
-function logCloseLoginQR() {
-  document.getElementById('logLoginQrModal').classList.remove('open');
-  logStopLoginQR();
-}
-async function logStartLoginQR() {
-  try {
-    logLoginQrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    const video = document.getElementById('logLoginQrVideo');
-    video.srcObject = logLoginQrStream; video.play();
-    const canvas = document.getElementById('logLoginQrCanvas');
-    logLoginQrInterval = setInterval(() => {
-      if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
-      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0);
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imgData.data, imgData.width, imgData.height);
-      if (code && code.data) {
-        logStopLoginQR();
-        logCloseLoginQR();
-        document.getElementById('logLoginUser').value = code.data.trim();
-        logShowToast('Staff QR scanned: ' + code.data.trim(), 'ok');
-      }
-    }, 300);
-  } catch(e) {
-    logShowToast('Camera unavailable — enter username manually.', 'warn');
-    logCloseLoginQR();
-  }
-}
-function logStopLoginQR() {
-  if (logLoginQrInterval) { clearInterval(logLoginQrInterval); logLoginQrInterval = null; }
-  if (logLoginQrStream) { logLoginQrStream.getTracks().forEach(t => t.stop()); logLoginQrStream = null; }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   SUB TAB SWITCH
-═══════════════════════════════════════════════════════════ */
-function logSwitchTab(tab) {
-  document.getElementById('logTabDispatch').className = 'log-sub-tab' + (tab === 'dispatch' ? ' active' : '');
-  document.getElementById('logTabRecords').className = 'log-sub-tab' + (tab === 'records' ? ' active' : '');
-  document.getElementById('logPanelDispatch').className = 'log-panel' + (tab === 'dispatch' ? ' active' : '');
-  document.getElementById('logPanelRecords').className = 'log-panel' + (tab === 'records' ? ' active' : '');
-  if (tab === 'records') logRenderRecords();
-}
-
-/* ═══════════════════════════════════════════════════════════
-   PHU DROPDOWN
-═══════════════════════════════════════════════════════════ */
-function logLoadPHUs() {
-  const dist = document.getElementById('logDistrict').value;
-  const sel = document.getElementById('logPHU');
-  sel.innerHTML = '<option value="">— Select PHU —</option>';
-  if (dist && LOG_PHU_DATA[dist]) {
-    LOG_PHU_DATA[dist].forEach(p => {
-      const o = document.createElement('option'); o.value = p; o.textContent = p; sel.appendChild(o);
-    });
-    sel.disabled = false;
-  } else { sel.disabled = true; sel.innerHTML = '<option value="">— Select District First —</option>'; }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   CALC TOTAL
-═══════════════════════════════════════════════════════════ */
-function logCalcTotal() {
-  const ig2 = parseInt(document.getElementById('logQtyIG2').value) || 0;
-  const pbo = parseInt(document.getElementById('logQtyPBO').value) || 0;
-  document.getElementById('logTotalITN').textContent = ig2 + pbo;
-}
-
-function logUpdatePlatePrev() {
-  const L = (document.getElementById('logVehL').value || '').padEnd(3,'–');
-  const N = (document.getElementById('logVehN').value || '').padEnd(3,'–');
-  document.getElementById('logPlatePrev').textContent = L + '-' + N;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   DISPATCH INIT
-═══════════════════════════════════════════════════════════ */
-function logInitDispatch() {
-  const now = new Date();
-  document.getElementById('logAutoDate').value = now.toLocaleString('en-GB', { dateStyle: 'full', timeStyle: 'short' });
-  document.getElementById('logAutoStaff').value = logStaff.full_name + ' (' + logStaff.staff_id + ')';
-  const did = 'DSP-' + now.getFullYear() + ('0'+(now.getMonth()+1)).slice(-2) + ('0'+now.getDate()).slice(-2) + '-' + Math.floor(1000 + Math.random() * 9000);
-  document.getElementById('logAutoId').value = did;
-  logCurrentDispatch = {
-    dispatchId: did,
-    dateTime: now.toISOString(),
-    staffName: logStaff.full_name,
-    staffUsername: logStaff.username,
-    staffId: logStaff.staff_id,
-    staffDistrict: logStaff.district,
-  };
-  logVerifiedDriver = null;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   STEP CONTROLS
-═══════════════════════════════════════════════════════════ */
-function logSetStep(n) {
-  [1,2,3,4].forEach(i => document.getElementById('logStep'+i).style.display = (i===n?'block':'none'));
-  // circles
-  for (let i=1;i<=3;i++) {
-    const sc = document.getElementById('lsc'+i);
-    const lbl = document.getElementById('lsl-'+i);
-    if (i < n) {
-      sc.className='log-step-circle done';
-      sc.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>';
-      if(lbl) lbl.className='log-step-lbl done';
-    } else if (i===n) {
-      sc.className='log-step-circle active';
-      if(i===3) sc.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>';
-      else sc.textContent=i;
-      if(lbl) lbl.className='log-step-lbl active';
-    } else {
-      sc.className='log-step-circle';
-      if(i===3) sc.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>';
-      else sc.textContent=i;
-      if(lbl) lbl.className='log-step-lbl';
-    }
-    if (i<3) document.getElementById('lsl'+i).className='log-step-line'+(i<n?' done':'');
-  }
-}
-function logFerr(id, show) { const el=document.getElementById(id); if(el) el.className='log-ferr'+(show?' show':''); }
-
-function logGoStep1() { logStopQR(); logSetStep(1); window.scrollTo(0,0); }
-function logGoStep2() {
-  let ok = true;
-  if (!document.getElementById('logDistrict').value) { logFerr('logErrDist',true); ok=false; } else logFerr('logErrDist',false);
-  if (!document.getElementById('logPHU').value) { logFerr('logErrPHU',true); ok=false; } else logFerr('logErrPHU',false);
-  const ig2=document.getElementById('logQtyIG2').value, pbo=document.getElementById('logQtyPBO').value;
-  if(ig2===''||parseInt(ig2)<0){logFerr('logErrIG2',true);ok=false;}else logFerr('logErrIG2',false);
-  if(pbo===''||parseInt(pbo)<0){logFerr('logErrPBO',true);ok=false;}else logFerr('logErrPBO',false);
-  if(!ok){logShowToast('Please fill all required fields.','warn');return;}
-  Object.assign(logCurrentDispatch, {
-    district: document.getElementById('logDistrict').value,
-    phu: document.getElementById('logPHU').value,
-    qtyIG2: parseInt(ig2)||0,
-    qtyPBO: parseInt(pbo)||0,
-    totalITN: (parseInt(ig2)||0)+(parseInt(pbo)||0),
-  });
-  logSetStep(2); window.scrollTo(0,0);
-}
-function logGoStep2FromStep3() { logStopQR(); logSetStep(2); window.scrollTo(0,0); }
-function logGoStep3() {
-  let ok=true;
-  const fn=document.getElementById('logDrvFirst').value.trim();
-  const ln=document.getElementById('logDrvLast').value.trim();
-  const vl=document.getElementById('logVehL').value.trim();
-  const vn=document.getElementById('logVehN').value.trim();
-  if(!fn||!/^[a-zA-Z\s]+$/.test(fn)){logFerr('logErrDrvFirst',true);ok=false;}else logFerr('logErrDrvFirst',false);
-  if(!ln||!/^[a-zA-Z\s]+$/.test(ln)){logFerr('logErrDrvLast',true);ok=false;}else logFerr('logErrDrvLast',false);
-  if(!vl||vl.length!==3){logFerr('logErrVL',true);ok=false;}else logFerr('logErrVL',false);
-  if(!vn||vn.length!==3){logFerr('logErrVN',true);ok=false;}else logFerr('logErrVN',false);
-  if(!ok){logShowToast('Please fill all driver fields correctly.','warn');return;}
-  Object.assign(logCurrentDispatch, {
-    driverFirst: fn.charAt(0).toUpperCase()+fn.slice(1).toLowerCase(),
-    driverLast: ln.charAt(0).toUpperCase()+ln.slice(1).toLowerCase(),
-    vehicle: vl.toUpperCase()+'-'+vn,
-    driverUsername:'', driverStaffId:'', driverVerified:false,
-  });
-  logBuildReview();
-  logSetStep(3); window.scrollTo(0,0);
-}
-
-function logBuildReview() {
-  const d = logCurrentDispatch;
-  const drvVerified = logVerifiedDriver;
-  document.getElementById('logReviewGrid').innerHTML = `
-    <div class="log-review-item"><label>Dispatch ID</label><br><span>${d.dispatchId}</span></div>
-    <div class="log-review-item"><label>Date/Time</label><br><span>${new Date(d.dateTime).toLocaleString('en-GB')}</span></div>
-    <div class="log-review-item"><label>DMS Staff</label><br><span>${d.staffName}</span></div>
-    <div class="log-review-item"><label>Staff District</label><br><span>${d.staffDistrict}</span></div>
-    <div class="log-review-item"><label>District</label><br><span>${d.district}</span></div>
-    <div class="log-review-item"><label>PHU</label><br><span>${d.phu}</span></div>
-    <div class="log-review-item"><label>IG2 ITNs</label><br><span>${d.qtyIG2}</span></div>
-    <div class="log-review-item"><label>PBO ITNs</label><br><span>${d.qtyPBO}</span></div>
-    <div class="log-review-item"><label>Total ITNs</label><br><span>${d.totalITN}</span></div>
-    <div class="log-review-item"><label>Driver</label><br><span>${d.driverFirst} ${d.driverLast}</span></div>
-    <div class="log-review-item"><label>Vehicle Plate</label><br><span>${d.vehicle}</span></div>
-    <div class="log-review-item"><label>Driver Verified</label><br><span id="reviewDrvStatus" style="color:${drvVerified?'#1a7a4a':'#d4700a'}">${drvVerified?'✓ VERIFIED ('+drvVerified.username+')':'⚠ Not yet scanned'}</span></div>
-  `;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   QR DRIVER SCAN & VALIDATION
-═══════════════════════════════════════════════════════════ */
-async function logStartQR() {
-  document.getElementById('logQrVideoContainer').style.display = 'block';
-  document.getElementById('logBtnStartScan').style.display = 'none';
-  document.getElementById('logBtnStopScan').style.display = 'inline-flex';
-  try {
-    logQrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    const video = document.getElementById('logQrVideo');
-    video.srcObject = logQrStream; video.play();
-    const canvas = document.getElementById('logQrCanvas');
-    logQrInterval = setInterval(() => {
-      if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
-      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0);
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imgData.data, imgData.width, imgData.height);
-      if (code && code.data) {
-        logStopQR();
-        logVerifyDriver(code.data.trim());
-      }
-    }, 300);
-  } catch(e) {
-    logShowToast('Camera unavailable — enter driver username manually.', 'warn');
-    logStopQR();
-  }
-}
-function logStopQR() {
-  if (logQrInterval) { clearInterval(logQrInterval); logQrInterval = null; }
-  if (logQrStream) { logQrStream.getTracks().forEach(t => t.stop()); logQrStream = null; }
-  document.getElementById('logQrVideoContainer').style.display = 'none';
-  document.getElementById('logBtnStartScan').style.display = 'inline-flex';
-  document.getElementById('logBtnStopScan').style.display = 'none';
-}
-function logSetManualDriver() {
-  const val = document.getElementById('logManualUser').value.trim();
-  if (!val) { logShowToast('Enter a driver username.', 'warn'); return; }
-  logVerifyDriver(val);
-  document.getElementById('logManualUser').value = '';
-}
-
-function logVerifyDriver(username) {
-  const result = document.getElementById('logQrResult');
-  const card = document.getElementById('logDriverCard');
-  const user = logFindUser(username);
-  if (!user) {
-    result.className = 'log-qr-result fail';
-    result.style.display = 'block';
-    result.textContent = '✗ USERNAME NOT FOUND: "' + username + '" — not in users.csv';
-    card.style.display = 'none';
-    logVerifiedDriver = null;
-    logShowToast('Driver not found in registry!', 'err');
-    logBuildReview();
-    return;
-  }
-  if (!user.role.toLowerCase().includes('driver')) {
-    result.className = 'log-qr-result fail';
-    result.style.display = 'block';
-    result.textContent = '✗ USER "' + username + '" is not registered as a Driver (role: ' + user.role + ')';
-    card.style.display = 'none';
-    logVerifiedDriver = null;
-    logShowToast('This user is not a registered driver!', 'err');
-    logBuildReview();
-    return;
-  }
-  // SUCCESS
-  result.className = 'log-qr-result ok';
-  result.style.display = 'block';
-  result.textContent = '✓ DRIVER VERIFIED: ' + user.full_name + ' (' + user.username + ')';
-  card.style.display = 'block';
-  document.getElementById('logDrvVerName').textContent = user.full_name;
-  document.getElementById('logDrvVerUser').textContent = user.username;
-  document.getElementById('logDrvVerId').textContent = user.staff_id;
-  document.getElementById('logDrvVerDist').textContent = user.district;
-  document.getElementById('logDrvVerVeh').textContent = user.vehicle_letters && user.vehicle_numbers ? user.vehicle_letters+'-'+user.vehicle_numbers : 'Not assigned';
-  document.getElementById('logDrvVerPhone').textContent = user.phone || '—';
-  logVerifiedDriver = user;
-  Object.assign(logCurrentDispatch, {
-    driverUsername: user.username,
-    driverStaffId: user.staff_id,
-    driverVerified: true,
-    driverRegisteredVehicle: user.vehicle_letters && user.vehicle_numbers ? user.vehicle_letters+'-'+user.vehicle_numbers : '',
-  });
-  logBuildReview();
-  logShowToast('Driver verified: ' + user.full_name, 'ok');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   SUBMIT
-═══════════════════════════════════════════════════════════ */
-async function logSubmitDispatch() {
-  const btn = document.getElementById('logBtnSubmit');
-  btn.disabled = true;
-  btn.textContent = 'SUBMITTING...';
-  const record = { ...logCurrentDispatch, status: 'submitted', submittedAt: new Date().toISOString() };
-  // Save locally
-  logRecords.push(record);
-  localStorage.setItem('log_dispatch_records', JSON.stringify(logRecords));
-  logUpdateBadge();
-  // Submit to Sheets
-  try {
-    const p = new URLSearchParams({
-      sheet: 'DMS_Logistics',
-      dispatchId: record.dispatchId,
-      dateTime: record.dateTime,
-      staffName: record.staffName,
-      staffUsername: record.staffUsername,
-      staffId: record.staffId,
-      staffDistrict: record.staffDistrict,
-      district: record.district,
-      phu: record.phu,
-      qtyIG2: record.qtyIG2,
-      qtyPBO: record.qtyPBO,
-      totalITN: record.totalITN,
-      driverFirst: record.driverFirst,
-      driverLast: record.driverLast,
-      vehicle: record.vehicle,
-      driverUsername: record.driverUsername || '',
-      driverStaffId: record.driverStaffId || '',
-      driverVerified: record.driverVerified ? 'YES' : 'NO',
-      driverRegisteredVehicle: record.driverRegisteredVehicle || '',
-      submittedAt: record.submittedAt,
-    });
-    await fetch(LOG_SHEETS_URL + '?' + p.toString(), { method: 'GET', mode: 'no-cors' });
-    logShowToast('Submitted to Google Sheets!', 'ok');
-  } catch(e) {
-    logShowToast('Saved locally. Google Sheets sync pending.', 'warn');
-  }
-  document.getElementById('logSuccessId').textContent = 'Dispatch ID: ' + record.dispatchId;
-  logSetStep(4);
-  btn.disabled = false;
-  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg> SUBMIT DISPATCH TO GOOGLE SHEETS';
-  window.scrollTo(0,0);
-}
-
-function logNewDispatch() {
-  document.getElementById('logDistrict').value='';
-  document.getElementById('logPHU').innerHTML='<option value="">— Select District First —</option>';
-  document.getElementById('logPHU').disabled=true;
-  document.getElementById('logQtyIG2').value='';
-  document.getElementById('logQtyPBO').value='';
-  document.getElementById('logTotalITN').textContent='0';
-  document.getElementById('logDrvFirst').value='';
-  document.getElementById('logDrvLast').value='';
-  document.getElementById('logVehL').value='';
-  document.getElementById('logVehN').value='';
-  document.getElementById('logPlatePrev').textContent='— — —';
-  document.getElementById('logQrResult').style.display='none';
-  document.getElementById('logDriverCard').style.display='none';
-  logVerifiedDriver=null;
-  logStopQR();
-  logInitDispatch();
-  logSetStep(1);
-  window.scrollTo(0,0);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   RECORDS & SUMMARY
-═══════════════════════════════════════════════════════════ */
-function logRenderRecords() {
-  const r = logRecords;
-  const allDistricts = Object.keys(LOG_PHU_DATA);
-  // Stats
-  document.getElementById('lsTotal').textContent = r.length;
-  document.getElementById('lsIG2').textContent = r.reduce((s,x)=>s+(x.qtyIG2||0),0).toLocaleString();
-  document.getElementById('lsPBO').textContent = r.reduce((s,x)=>s+(x.qtyPBO||0),0).toLocaleString();
-  const servedSet = new Set(r.map(x=>x.phu));
-  const totalPHUs = allDistricts.reduce((s,d)=>s+LOG_PHU_DATA[d].length,0);
-  document.getElementById('lsPHUs').textContent = servedSet.size;
-  document.getElementById('lsRemaining').textContent = totalPHUs - servedSet.size;
-
-  // District progress
-  const dp = document.getElementById('logDistProgress');
-  if (!r.length) { dp.innerHTML='<p style="color:#9ba8b8;font-size:0.84rem;text-align:center;padding:18px 0;font-family:sans-serif;">No dispatches yet.</p>'; }
-  else {
-    dp.innerHTML = allDistricts.map(dist => {
-      const dr = r.filter(x=>x.district===dist);
-      const total = LOG_PHU_DATA[dist].length;
-      const served = new Set(dr.map(x=>x.phu)).size;
-      const pct = total>0?Math.round((served/total)*100):0;
-      const itn = dr.reduce((s,x)=>s+(x.totalITN||0),0);
-      return `<div class="log-prog-wrap">
-        <div class="log-prog-hdr"><span class="log-prog-name">${dist}</span><span class="log-prog-pct">${served}/${total} PHUs · ${itn.toLocaleString()} ITNs · ${pct}%</span></div>
-        <div class="log-prog-outer"><div class="log-prog-inner" style="width:${pct}%"></div></div>
-      </div>`;
-    }).join('');
-  }
-
-  // PHU coverage grid
-  const pg = document.getElementById('logPHUGrid');
-  if (!r.length) { pg.innerHTML='<p style="color:#9ba8b8;font-size:0.84rem;text-align:center;padding:18px 0;font-family:sans-serif;grid-column:1/-1;">No dispatches yet.</p>'; }
-  else {
-    pg.innerHTML = allDistricts.map(dist => {
-      const allP = LOG_PHU_DATA[dist];
-      const served = new Set(r.filter(x=>x.district===dist).map(x=>x.phu)).size;
-      const rem = allP.length - served;
-      const pct = Math.round((served/allP.length)*100);
-      return `<div class="log-dist-card">
-        <div class="log-dist-name">${dist}</div>
-        <div class="log-dist-stat"><span>Total PHUs</span><span>${allP.length}</span></div>
-        <div class="log-dist-stat"><span style="color:#1a7a4a">Dispatched</span><span style="color:#1a7a4a">${served}</span></div>
-        <div class="log-dist-stat"><span style="color:#d4700a">Remaining</span><span style="color:#d4700a">${rem}</span></div>
-        <div class="log-dist-stat"><span>Coverage</span><span>${pct}%</span></div>
-      </div>`;
-    }).join('');
-  }
-
-  // Table
-  const tb = document.getElementById('logRecordsBody');
-  if (!r.length) { tb.innerHTML='<tr><td colspan="14" style="text-align:center;padding:26px;color:#9ba8b8;font-family:sans-serif;">No dispatch records yet.</td></tr>'; }
-  else {
-    tb.innerHTML = r.slice().reverse().map(x=>`
-      <tr>
-        <td style="font-family:'Oswald',sans-serif;font-size:0.73rem;color:#004080">${x.dispatchId}</td>
-        <td>${new Date(x.dateTime).toLocaleString('en-GB',{dateStyle:'short',timeStyle:'short'})}</td>
-        <td>${x.district}</td>
-        <td style="max-width:150px;white-space:normal;line-height:1.3;">${x.phu}</td>
-        <td style="font-weight:700;color:#004080">${x.qtyIG2}</td>
-        <td style="font-weight:700;color:#C8973A">${x.qtyPBO}</td>
-        <td style="font-weight:700">${x.totalITN}</td>
-        <td>${x.driverFirst} ${x.driverLast}</td>
-        <td style="font-family:'Oswald',sans-serif;font-size:0.73rem">${x.driverUsername||'—'}</td>
-        <td>${x.driverStaffId||'—'}</td>
-        <td style="font-family:'Oswald',sans-serif;letter-spacing:0.07em">${x.vehicle}</td>
-        <td><span class="log-badge ${x.driverVerified?'ver':'pen'}">${x.driverVerified?'VERIFIED':'UNVERIFIED'}</span></td>
-        <td>${x.staffName}</td>
-        <td><span class="log-badge ok">SUBMITTED</span></td>
-      </tr>
-    `).join('');
-  }
-}
-
-function logUpdateBadge() {
-  document.getElementById('logRecBadge').textContent = logRecords.length;
-  document.getElementById('logBadge').textContent = logRecords.length;
-}
-
-function logDownloadCSV() {
-  if (!logRecords.length) { logShowToast('No records to export.', 'warn'); return; }
-  const hdrs = ['Dispatch ID','DateTime','Staff Name','Staff Username','Staff ID','Staff District','District','PHU','IG2','PBO','Total ITN','Driver First','Driver Last','Vehicle','Driver Username','Driver Staff ID','Driver Verified','Registered Vehicle','Submitted At'];
-  const rows = logRecords.map(r=>[
-    r.dispatchId,r.dateTime,r.staffName,r.staffUsername,r.staffId,r.staffDistrict,
-    r.district,`"${r.phu}"`,r.qtyIG2,r.qtyPBO,r.totalITN,
-    r.driverFirst,r.driverLast,r.vehicle,
-    r.driverUsername||'',r.driverStaffId||'',r.driverVerified?'YES':'NO',
-    r.driverRegisteredVehicle||'',r.submittedAt||''
-  ]);
-  const csv = [hdrs,...rows].map(r=>r.join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = 'DMS_Logistics_' + new Date().toISOString().slice(0,10) + '.csv';
-  a.click();
-  logShowToast('CSV downloaded!', 'ok');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════════════════════ */
-let logToastTimer;
-function logShowToast(msg, type='') {
-  const t = document.getElementById('logToast');
-  t.textContent = msg;
-  t.className = 'log-toast show' + (type ? ' '+type : '');
-  clearTimeout(logToastTimer);
-  logToastTimer = setTimeout(()=>{ t.className='log-toast'; }, 3400);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   INIT: check session + load CSV on page load
-═══════════════════════════════════════════════════════════ */
-window.addEventListener('load', () => {
-  // Start loading users CSV immediately so it's ready
-  logLoadUsersCSV();
-  logUpdateBadge();
-});
-</script>
+    <script src="script.js"></script>
 </body>
 </html>
