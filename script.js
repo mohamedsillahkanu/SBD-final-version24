@@ -615,8 +615,7 @@ function openSummaryModal() {
            const when = rec ? new Date(rec.timestamp).toLocaleString() : '';
            const coverage = rec?.data?.coverage_total ? rec.data.coverage_total + '%' : '—';
            schoolRows += `
-             <tr style="${done ? 'background:#fff5f5;' : ''}" onclick="openSchoolDetail('${s.key}')" 
-                 style="cursor:pointer;${done ? 'background:#fff5f5;' : ''}">
+             <tr style="cursor:pointer;${done ? 'background:#fff5f5;' : ''}" onclick="openSchoolDetail('${s.key}')">
                <td>
                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;
                    background:${done ? '#dc3545' : '#adb5bd'};margin-right:8px;flex-shrink:0;"></span>
@@ -707,7 +706,7 @@ function openSummaryModal() {
                 <th style="padding:8px;text-align:center;border-bottom:1px solid #dee2e6;">Action</th>
               </tr>
             </thead>
-            <tbody style="cursor:pointer;">${schoolRows}</tbody>
+            <tbody>${schoolRows}</tbody>
           </table>
         </div>
       </div>`;
@@ -848,14 +847,12 @@ function openSchoolDetail(key) {
       <!-- Team members -->
       ${buildTeamSection(d)}
 
-      <!-- GPS -->
+      <!-- GPS - Maps link removed as requested -->
       ${d.gps_lat ? `
       <div style="background:#e8f1fa;border:2px solid #004080;border-radius:8px;padding:12px 16px;font-size:12px;">
         <strong style="color:#004080;">GPS COORDINATES:</strong>
         ${d.gps_lat}, ${d.gps_lng}
         ${d.gps_acc ? '<span style="color:#666;margin-left:8px;">(±' + d.gps_acc + 'm)</span>' : ''}
-        <a href="https://www.google.com/maps?q=${d.gps_lat},${d.gps_lng}" target="_blank"
-           style="margin-left:12px;color:#004080;font-weight:600;text-decoration:underline;">Open in Maps</a>
       </div>` : ''}`;
 
     closeSummaryModal();
@@ -1592,6 +1589,13 @@ async function syncPending() {
         saveToStorage(); updateCounts();
         showNotification('Synced '+synced.length+' submission(s)!', 'success');
     }
+}
+
+// ============================================
+// VIEW SUMMARY FUNCTION (called from Summary button)
+// ============================================
+function viewSummary() {
+    openSummaryModal();
 }
 
 // ============================================
