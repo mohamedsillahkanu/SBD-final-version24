@@ -627,33 +627,33 @@ window.openSummaryModal = function() {
     });
 
     let schoolRows = '';
-    all.sort((a,b)=>a.district.localeCompare(b.district)||a.school_name.localeCompare(b.school_name))
+    all.sort((a,b)=>a.district.localeCompare(b.district)||a.chiefdom.localeCompare(b.chiefdom)||a.school_name.localeCompare(b.school_name))
        .forEach(s => {
            const done = isSchoolSubmitted(s.key);
            const rec  = getSubmittedRecord(s.key);
            const when = rec ? formatDate(rec.timestamp) : '—';
            const coverage = rec?.data?.coverage_total ? rec.data.coverage_total+'%' : '—';
-           const by = rec?.data?.submitted_by || '—';
            schoolRows += `
              <tr style="cursor:pointer;${done?'background:#f0fff0;':''}" onclick="openSchoolDetail('${s.key}')">
-               <td style="padding:12px 8px;text-align:left;">
-                 <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${done?'#28a745':'#ffc107'};margin-right:10px;"></span>
+               <td style="padding:10px 8px;text-align:left;">
+                 <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${done?'#28a745':'#ffc107'};margin-right:8px;flex-shrink:0;"></span>
                  <strong>${s.school_name}</strong>
                </td>
-               <td style="padding:12px 8px;text-align:center;">${s.community}</td>
-               <td style="padding:12px 8px;text-align:center;">${s.district}</td>
-               <td style="padding:12px 8px;text-align:center;">
+               <td style="padding:10px 8px;text-align:center;font-size:12px;">${s.district}</td>
+               <td style="padding:10px 8px;text-align:center;font-size:12px;">${s.chiefdom||'—'}</td>
+               <td style="padding:10px 8px;text-align:center;font-size:12px;">${s.facility||'—'}</td>
+               <td style="padding:10px 8px;text-align:center;font-size:12px;">${s.community||'—'}</td>
+               <td style="padding:10px 8px;text-align:center;">
                  ${done
-                   ? '<span style="background:#28a745;color:#fff;border-radius:4px;padding:4px 12px;font-size:11px;font-weight:600;letter-spacing:0.5px;">SUBMITTED</span>'
-                   : '<span style="background:#ffc107;color:#000;border-radius:4px;padding:4px 12px;font-size:11px;font-weight:600;letter-spacing:0.5px;">PENDING</span>'}
+                   ? '<span style="background:#28a745;color:#fff;border-radius:4px;padding:3px 10px;font-size:11px;font-weight:600;letter-spacing:0.5px;">SUBMITTED</span>'
+                   : '<span style="background:#ffc107;color:#000;border-radius:4px;padding:3px 10px;font-size:11px;font-weight:600;letter-spacing:0.5px;">PENDING</span>'}
                </td>
-               <td style="padding:12px 8px;text-align:center;font-size:11px;color:#666;">${when}</td>
-               <td style="padding:12px 8px;text-align:center;font-size:11px;">${by}</td>
-               <td style="padding:12px 8px;text-align:center;font-weight:700;color:${done?'#28a745':'#aaa'}">${coverage}</td>
-               <td style="padding:12px 8px;text-align:center;">
+               <td style="padding:10px 8px;text-align:center;font-size:11px;color:#666;">${when}</td>
+               <td style="padding:10px 8px;text-align:center;font-weight:700;color:${done?'#28a745':'#aaa'}">${coverage}</td>
+               <td style="padding:10px 8px;text-align:center;">
                  ${done
-                   ? `<button onclick="event.stopPropagation();openSchoolDetail('${s.key}')" style="background:#004080;color:#fff;border:none;border-radius:4px;padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Oswald',sans-serif;letter-spacing:0.5px;">VIEW</button>`
-                   : `<button onclick="event.stopPropagation();loadSchoolIntoForm('${s.key}')" style="background:#28a745;color:#fff;border:none;border-radius:4px;padding:6px 16px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Oswald',sans-serif;letter-spacing:0.5px;">START</button>`}
+                   ? `<button onclick="event.stopPropagation();openSchoolDetail('${s.key}')" style="background:#004080;color:#fff;border:none;border-radius:4px;padding:5px 13px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Oswald',sans-serif;letter-spacing:0.5px;">VIEW</button>`
+                   : `<button onclick="event.stopPropagation();loadSchoolIntoForm('${s.key}')" style="background:#28a745;color:#fff;border:none;border-radius:4px;padding:5px 13px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Oswald',sans-serif;letter-spacing:0.5px;">START</button>`}
                </td>
              </tr>`;
        });
@@ -702,15 +702,16 @@ window.openSummaryModal = function() {
         </div>
         <div style="overflow-x:auto;border:2px solid #dee2e6;border-top:none;border-radius:0 0 8px 8px;">
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
-            <thead><tr style="background:#f8f9fa;">
-              <th style="padding:12px 15px;text-align:left;border-bottom:2px solid #dee2e6;">School</th>
-              <th style="padding:12px;text-align:center;border-bottom:2px solid #dee2e6;">Community</th>
-              <th style="padding:12px;text-align:center;border-bottom:2px solid #dee2e6;">District</th>
-              <th style="padding:12px;text-align:center;border-bottom:2px solid #dee2e6;">Status</th>
-              <th style="padding:12px;text-align:center;border-bottom:2px solid #dee2e6;">Submitted</th>
-              <th style="padding:12px;text-align:center;border-bottom:2px solid #dee2e6;">By</th>
-              <th style="padding:12px;text-align:center;border-bottom:2px solid #dee2e6;">Coverage</th>
-              <th style="padding:12px;text-align:center;border-bottom:2px solid #dee2e6;">Action</th>
+            <thead><tr style="background:linear-gradient(135deg,#004080,#1a6abf);">
+              <th style="padding:11px 12px;text-align:left;border-bottom:2px solid #dee2e6;color:#fff;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.5px;text-transform:uppercase;">School</th>
+              <th style="padding:11px 10px;text-align:center;border-bottom:2px solid #dee2e6;color:#fff;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.5px;text-transform:uppercase;">District</th>
+              <th style="padding:11px 10px;text-align:center;border-bottom:2px solid #dee2e6;color:#fff;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.5px;text-transform:uppercase;">Chiefdom</th>
+              <th style="padding:11px 10px;text-align:center;border-bottom:2px solid #dee2e6;color:#fff;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.5px;text-transform:uppercase;">PHU</th>
+              <th style="padding:11px 10px;text-align:center;border-bottom:2px solid #dee2e6;color:#fff;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.5px;text-transform:uppercase;">Community</th>
+              <th style="padding:11px 10px;text-align:center;border-bottom:2px solid #dee2e6;color:#fff;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.5px;text-transform:uppercase;">Status</th>
+              <th style="padding:11px 10px;text-align:center;border-bottom:2px solid #dee2e6;color:#fff;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.5px;text-transform:uppercase;">Submitted</th>
+              <th style="padding:11px 10px;text-align:center;border-bottom:2px solid #dee2e6;color:#fff;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.5px;text-transform:uppercase;">Coverage</th>
+              <th style="padding:11px 10px;text-align:center;border-bottom:2px solid #dee2e6;color:#fff;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.5px;text-transform:uppercase;">Action</th>
             </tr></thead>
             <tbody>${schoolRows}</tbody>
           </table>
@@ -1476,34 +1477,33 @@ function showNotification(msg, type) {
 }
 
 function setupEventListeners() {
-    // Use window.* references so ai_agent.js overrides take effect
-    const vd=document.getElementById('viewDataBtn');
-    if(vd) vd.addEventListener('click',()=>window.open(CONFIG.SHEET_URL,'_blank'));
-    const dd=document.getElementById('downloadDataBtn');
-    if(dd) dd.addEventListener('click',downloadData);
-    // analysisModal opened via onclick attribute in HTML — no duplicate listener needed
-    const vdr=document.getElementById('viewDraftsBtn');
-    if(vdr) vdr.addEventListener('click',()=>window.openDraftsModal&&window.openDraftsModal());
-    const vs=document.getElementById('viewSummaryBtn');
-    if(vs) vs.addEventListener('click',()=>window.openSummaryModal&&window.openSummaryModal());
-    const df=document.getElementById('dataForm');
-    if(df) df.addEventListener('submit',handleSubmit);
+    // viewDataBtn — handled by guardedAction in HTML
+    // downloadDataBtn — handled by guardedAction in HTML
+    // viewAnalysisBtn — handled by guardedAction in HTML
+    // viewSummaryBtn — handled by guardedAction in HTML
+    // aiAgentBtn — handled by guardedAction in HTML
 
-    window.addEventListener('online', ()=>{ state.isOnline=true;  updateOnlineStatus(); syncPending(); });
-    window.addEventListener('offline',()=>{ state.isOnline=false; updateOnlineStatus(); });
+    // Expose download so guardedAction can call it
+    window._downloadData = downloadData;
 
-    document.querySelectorAll('.modal-overlay').forEach(m=>{
-        m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('show'); });
+    const df = document.getElementById('dataForm');
+    if (df) df.addEventListener('submit', handleSubmit);
+
+    window.addEventListener('online',  () => { state.isOnline = true;  updateOnlineStatus(); syncPending(); });
+    window.addEventListener('offline', () => { state.isOnline = false; updateOnlineStatus(); });
+
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+        m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
     });
 
-    const dni=document.getElementById('draftNameInput');
-    if(dni) dni.addEventListener('keypress',e=>{ if(e.key==='Enter') confirmSaveDraft(); });
+    const dni = document.getElementById('draftNameInput');
+    if (dni) dni.addEventListener('keypress', e => { if (e.key === 'Enter') confirmSaveDraft(); });
 
-    document.querySelectorAll('.btn-next').forEach(btn=>{
-        btn.onclick=e=>{ e.preventDefault(); window.nextSection(); };
+    document.querySelectorAll('.btn-next').forEach(btn => {
+        btn.onclick = e => { e.preventDefault(); window.nextSection(); };
     });
-    document.querySelectorAll('.btn-back').forEach(btn=>{
-        btn.onclick=e=>{ e.preventDefault(); window.previousSection(); };
+    document.querySelectorAll('.btn-back').forEach(btn => {
+        btn.onclick = e => { e.preventDefault(); window.previousSection(); };
     });
 }
 
