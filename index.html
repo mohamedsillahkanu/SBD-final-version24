@@ -1127,8 +1127,21 @@
                     </div>
                 </div>
 
-                <!-- Body: loading / charts -->
+                <!-- Tab bar -->
+                <div style="background:#fff;border-bottom:2px solid #c5d9f0;display:flex;flex-shrink:0;overflow-x:auto;scrollbar-width:none;">
+                    <button id="anTab-analysis" onclick="switchAnTab('analysis')"
+                      style="flex:1;min-width:110px;padding:11px 16px;border:none;background:none;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;color:#607080;text-transform:uppercase;border-bottom:3px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>ANALYSIS
+                    </button>
+                    <button id="anTab-targets" onclick="switchAnTab('targets')"
+                      style="flex:1;min-width:110px;padding:11px 16px;border:none;background:none;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;color:#607080;text-transform:uppercase;border-bottom:3px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>TARGETS
+                    </button>
+                </div>
+
+                <!-- Body: analysis / targets -->
                 <div id="analysisBody" style="flex:1;overflow-y:auto;padding:16px;background:#f0f4f8;"></div>
+                <div id="targetsBody" style="display:none;flex:1;overflow-y:auto;padding:16px;background:#f0f4f8;"></div>
             </div>
         </div>
 
