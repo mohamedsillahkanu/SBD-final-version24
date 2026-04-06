@@ -1,16 +1,24 @@
 {
-  "name": "SBD 2026 — ITN Distribution",
+  "name": "SBD 2026 \u2026 ITN Distribution",
   "short_name": "SBD 2026",
-  "description": "School-Based Distribution of ITNs — Sierra Leone 2026",
+  "description": "School-Based Distribution of ITNs \u2014 Sierra Leone 2026",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0056a8",
   "theme_color": "#0056a8",
   "orientation": "any",
-  "categories": ["health", "productivity"],
+  "categories": [
+    "health",
+    "productivity"
+  ],
   "lang": "en",
   "icons": [
-    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "./icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
