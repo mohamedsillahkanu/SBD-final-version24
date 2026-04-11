@@ -466,7 +466,7 @@
 <script>
 'use strict';
 
-const WEBHOOK_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbymRy-M5v0fVLWUjw4IXYhd1oIR2ZvnP_Dzr_iGR-Th0cMIpmE2ntGeujWYH7-C6NHIzA/exec';
 
 // ─── Storage ───
 const _mem = {};
@@ -642,26 +642,106 @@ function stopScan() {
     document.getElementById('stopScanBtn').style.display  = 'none';
 }
 
-function processQR(raw) {
+async function processQR(raw) {
     let data;
     try { data = JSON.parse(raw); } catch { showToast('Invalid QR — not an ICF-SL code', 'error'); return; }
-    if (data.type !== 'ICF-SL-DELIVERY') { showToast('QR is not an ICF-SL delivery receipt', 'error'); return; }
-    scannedData = data;
-    prefillForm(data);
-    showToast('QR scanned — verify quantities below', 'success');
+    if (data.type !== 'ICF-SL-DELIVERY' && data.type !== 'ICF-SL-ITN-MOVEMENT') {
+        showToast('QR is not an ICF-SL delivery receipt', 'error'); return;
+    }
+
+    // Normalise QR fields (itn_movement QR uses slightly different keys)
+    const dispId = data.dispatch_id || data.dispatchId || '';
+    showToast('QR scanned — verifying with Google Sheets…', 'info');
+
+    // ── Verify against Google Sheets (source of truth) ──────────
+    if (dispId) {
+        try {
+            const res = await Promise.race([
+                fetch(WEBHOOK_URL + '?action=getDispatch&id=' + encodeURIComponent(dispId)),
+                new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 8000))
+            ]);
+            if (res.ok) {
+                const sheetData = await res.json();
+                if (sheetData && sheetData.dispatch_id) {
+                    // Use Sheet data as authoritative — overrides QR data
+                    scannedData = normaliseDispatch(sheetData);
+                    prefillForm(scannedData);
+                    showToast('✅ QR verified on Google Sheets', 'success');
+                    return;
+                }
+            }
+        } catch(e) { console.warn('[QR verify] GAS failed:', e.message); }
+    }
+
+    // GAS unavailable — use QR data directly
+    scannedData = normaliseDispatch({ ...data, dispatch_id: dispId });
+    prefillForm(scannedData);
+    showToast('QR scanned (offline — not verified on Sheets)', 'info');
 }
 
-document.getElementById('manualLookupBtn').addEventListener('click', () => {
+document.getElementById('manualLookupBtn').addEventListener('click', () => lookupDispatch());
+document.getElementById('manualDispId').addEventListener('keydown', e => { if(e.key==='Enter') lookupDispatch(); });
+
+async function lookupDispatch() {
     const id = document.getElementById('manualDispId').value.trim().toUpperCase();
     if (!id) { showToast('Enter a dispatch ID', 'error'); return; }
+
+    const btn = document.getElementById('manualLookupBtn');
+    btn.disabled = true; btn.textContent = 'Searching…';
+
+    // ── 1. Check Google Sheets first (source of truth) ─────────
+    try {
+        const res = await Promise.race([
+            fetch(WEBHOOK_URL + '?action=getDispatch&id=' + encodeURIComponent(id)),
+            new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 8000))
+        ]);
+        if (res.ok) {
+            const d = await res.json();
+            if (d && d.dispatch_id) {
+                scannedData = normaliseDispatch(d);
+                prefillForm(scannedData);
+                showToast('✅ Dispatch found on Google Sheets', 'success');
+                btn.disabled = false; btn.textContent = 'LOOKUP';
+                return;
+            }
+        }
+    } catch(e) { console.warn('[Lookup] GAS failed:', e.message); }
+
+    // ── 2. Fall back to local localStorage ─────────────────────
     const dmsRecords = JSON.parse(store.get('dms_chiefdom_records','[]'));
-    const rec = dmsRecords.find(r => r.id === id);
+    const rec = dmsRecords.find(r => (r.id||'').toUpperCase() === id);
     if (rec) {
-        scannedData = { type:'ICF-SL-DELIVERY', dispatchId:rec.id, date:rec.date, time:rec.time, district:rec.district, chiefdom:rec.chiefdom, phu:rec.phu, ig2:rec.ig2, pbo:rec.pbo, total:rec.total, driverName:rec.driverName, driverUsername:rec.driverUsername, driverPhone:rec.driverPhone, vehiclePlate:rec.vehiclePlate, dmsStaff:rec.staffName };
+        scannedData = normaliseDispatch(rec);
         prefillForm(scannedData);
-        showToast('Dispatch found — verify quantities', 'success');
-    } else { showToast('Dispatch ID not found', 'error'); }
-});
+        showToast('Dispatch found locally', 'info');
+        btn.disabled = false; btn.textContent = 'LOOKUP';
+        return;
+    }
+
+    showToast('Dispatch ID "' + id + '" not found on Sheets or locally', 'error');
+    btn.disabled = false; btn.textContent = 'LOOKUP';
+}
+
+// Normalise different field name formats from GAS vs localStorage
+function normaliseDispatch(d) {
+    return {
+        type:            'ICF-SL-DELIVERY',
+        dispatchId:      d.dispatch_id   || d.dispatchId   || d.id        || '',
+        date:            d.date          || d.dispatch_date || '',
+        time:            d.time          || '',
+        district:        d.district      || d.destination_district        || '',
+        chiefdom:        d.chiefdom      || '',
+        phu:             d.phu           || d['Health Facility (PHU)']    || '',
+        ig2:             d.ig2_qty       != null ? d.ig2_qty : (d.ig2 != null ? d.ig2 : 0),
+        pbo:             d.pbo_qty       != null ? d.pbo_qty : (d.pbo != null ? d.pbo : 0),
+        total:           d.total_qty     != null ? d.total_qty : (d.total != null ? d.total : 0),
+        driverName:      d.driver_name   || d.driverName   || d.conveyor  || '',
+        driverUsername:  d.driver_username || d.driverUsername             || '',
+        driverPhone:     d.driver_phone  || d.driverPhone  || '',
+        vehiclePlate:    d.vehicle       || d.vehiclePlate || '',
+        dmsStaff:        d.staff_name    || d.dmsStaff     || '',
+    };
+}
 
 function prefillForm(data) {
     document.getElementById('fDispId').value   = data.dispatchId || '';
