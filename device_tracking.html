@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Device Tracker — Scan & Register</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        :root {
+            --navy: #0056a8;
+            --navy-mid: #003d7a;
+            --navy-light: #0068cc;
+            --gold: #ffc107;
+            --gold-light: #ffdd57;
+            --gold-pale: #fff8e1;
+            --gold-dark: #e6a800;
+            --green: #28a745;
+            --green-dark: #1e7e34;
+            --green-bg: #e8f5e9;
+            --red: #dc3545;
+            --red-dark: #c62828;
+            --red-bg: #fef2f2;
+            --orange: #f59e0b;
+            --orange-bg: #fffbeb;
+            --bg: #f0f4f8;
+            --card: #ffffff;
+            --text: #0f172a;
+            --text-mid: #475569;
+            --text-light: #94a3b8;
+            --border: #dfe3e8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== HEADER ===== */
+        .top-bar {
+            background: var(--navy);
+            padding: 14px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+
+        .top-bar-inner {
+            max-width: 540px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand { display: flex; align-items: center; gap: 12px; }
+
+        .brand-badge {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(212,160,23,0.3);
+        }
+
+        .brand-badge svg { width: 22px; height: 22px; stroke: var(--navy); fill: none; stroke-width: 2.5; }
+
+        .brand-text h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 22px;
+            color: var(--gold);
+            letter-spacing: 3px;
+            line-height: 1;
+        }
+
+        .brand-text p { font-size: 9px; color: rgba(255,255,255,0.5); letter-spacing: 2px; font-weight: 600; text-transform: uppercase; }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(16,185,129,0.6);
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { box-shadow: 0 0 8px rgba(16,185,129,0.6); }
+            50% { box-shadow: 0 0 16px rgba(16,185,129,0.9); }
+        }
+
+        /* ===== TABS ===== */
+        .tabs-container {
+            max-width: 540px;
+            margin: 0 auto;
+            padding: 20px 16px 0;
+        }
+
+        .tab-bar {
+            display: flex;
+            background: var(--navy);
+            border-radius: 14px;
+            padding: 4px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 6px;
+            border: none;
+            background: transparent;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.4);
+            cursor: pointer;
+            border-radius: 11px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .tab-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        .tab-btn.active {
+            color: var(--navy);
+            box-shadow: 0 2px 12px rgba(212,160,23,0.3);
+        }
+
+        .tab-btn.register.active { background: linear-gradient(135deg, var(--gold), var(--gold-light)); }
+        .tab-btn.return.active { background: linear-gradient(135deg, var(--green), #34d399); color: #fff; }
+        .tab-btn.dashboard.active { background: linear-gradient(135deg, var(--navy-light), var(--navy)); color: #fff; }
+
+        /* ===== MAIN CONTENT ===== */
+        .main {
+            max-width: 540px;
+            margin: 0 auto;
+            padding: 16px 16px 40px;
+        }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; animation: fadeUp 0.3s ease; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== SCANNER ===== */
+        .scanner-card {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .scanner-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .scanner-header.gold { background: linear-gradient(135deg, var(--gold-pale), #fef3c7); border-bottom: 2px solid var(--gold); }
+        .scanner-header.green-hd { background: var(--green-bg); border-bottom: 2px solid var(--green); }
+
+        .scanner-header svg { width: 22px; height: 22px; flex-shrink: 0; }
+        .scanner-header.gold svg { stroke: var(--gold-dark); }
+        .scanner-header.green-hd svg { stroke: var(--green-dark); }
+
+        .scanner-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 16px;
+            letter-spacing: 2px;
+        }
+
+        .scanner-header.gold .scanner-title { color: var(--gold-dark); }
+        .scanner-header.green-hd .scanner-title { color: var(--green-dark); }
+
+        .scanner-body { padding: 20px; }
+
+        .scan-area {
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            background: #000;
+            aspect-ratio: 1;
+        }
+
+        .scan-area video { border-radius: 14px; }
+
+        #reader-register, #reader-return {
+            width: 100%;
+        }
+
+        #reader-register video, #reader-return video { border-radius: 14px !important; }
+
+        .scan-overlay {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .scan-overlay svg { width: 64px; height: 64px; margin-bottom: 12px; }
+        .scan-overlay p { font-size: 14px; color: var(--text-mid); font-weight: 500; }
+
+        .scan-btn {
+            margin-top: 16px;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 18px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .scan-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; }
+
+        .scan-btn.gold-btn {
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color: var(--navy);
+            box-shadow: 0 4px 16px rgba(212,160,23,0.3);
+        }
+
+        .scan-btn.green-btn {
+            background: linear-gradient(135deg, var(--green), var(--green-dark));
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+        }
+
+        .scan-btn:hover { transform: translateY(-2px); }
+
+        .scan-btn.stop-btn {
+            background: var(--red);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(239,68,68,0.3);
+        }
+
+        /* ===== DEVICE INFO CARD ===== */
+        .device-card {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            overflow: hidden;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .device-card.show { display: block; animation: fadeUp 0.35s ease; }
+
+        .device-card-top {
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .device-card-top.gold-top {
+            background: linear-gradient(135deg, var(--navy), var(--navy-mid));
+        }
+
+        .device-card-top.green-top {
+            background: linear-gradient(135deg, #065f46, var(--green-dark));
+        }
+
+        .device-card-top.red-top {
+            background: linear-gradient(135deg, #991b1b, var(--red-dark));
+        }
+
+        .device-card-top.orange-top {
+            background: linear-gradient(135deg, #92400e, #b45309);
+        }
+
+        .device-card-top::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; left: 0; right: 0;
+            height: 16px;
+            background: var(--card);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .device-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .badge-register { background: rgba(212,160,23,0.2); color: var(--gold-light); }
+        .badge-returned { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+        .badge-error { background: rgba(239,68,68,0.2); color: #fca5a5; }
+        .badge-warning { background: rgba(245,158,11,0.2); color: #fcd34d; }
+
+        .device-status-badge svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
+
+        .device-person {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 26px;
+            color: #fff;
+            letter-spacing: 2px;
+            line-height: 1.1;
+        }
+
+        .device-phone {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .device-code-display {
+            margin-top: 10px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px;
+            letter-spacing: 5px;
+        }
+
+        .gold-top .device-code-display { color: var(--gold); }
+        .green-top .device-code-display { color: #6ee7b7; }
+        .red-top .device-code-display { color: #fca5a5; }
+        .orange-top .device-code-display { color: #fcd34d; }
+
+        .device-body { padding: 6px 20px 20px; }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .info-cell {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .info-cell.full { grid-column: span 2; }
+
+        .info-key {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .info-val {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.3;
+        }
+
+        /* ===== ACTION BUTTONS ===== */
+        .action-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 20px;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .action-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; }
+
+        .action-btn.register-action {
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color: var(--navy);
+            box-shadow: 0 6px 24px rgba(212,160,23,0.3);
+        }
+
+        .action-btn.return-action {
+            background: linear-gradient(135deg, var(--green), var(--green-dark));
+            color: #fff;
+            box-shadow: 0 6px 24px rgba(16,185,129,0.3);
+        }
+
+        .action-btn:hover { transform: translateY(-2px); }
+        .action-btn:active { transform: translateY(0); }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .action-btn .spinner-sm {
+            width: 20px; height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== MESSAGE CARD ===== */
+        .msg-card {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            overflow: hidden;
+            margin-bottom: 16px;
+            display: none;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .msg-card.show { display: block; animation: fadeUp 0.35s ease; }
+
+        .msg-card svg { width: 56px; height: 56px; margin-bottom: 14px; }
+        .msg-card.success-msg svg { stroke: var(--green); }
+        .msg-card.error-msg svg { stroke: var(--red); }
+        .msg-card.warning-msg svg { stroke: var(--orange); }
+
+        .msg-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 22px;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+
+        .success-msg .msg-title { color: var(--green-dark); }
+        .error-msg .msg-title { color: var(--red-dark); }
+        .warning-msg .msg-title { color: #b45309; }
+
+        .msg-text {
+            font-size: 14px;
+            color: var(--text-mid);
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .msg-detail {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .scan-again-btn {
+            margin-top: 20px;
+            padding: 12px 28px;
+            background: var(--navy);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 15px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .scan-again-btn:hover { background: var(--navy-mid); }
+
+        /* ===== HISTORY ===== */
+        .history-card {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+
+        .history-header {
+            padding: 14px 20px;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .history-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: var(--text-mid);
+        }
+
+        .history-count {
+            font-size: 11px;
+            background: var(--navy);
+            color: var(--gold);
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        .history-list { max-height: 260px; overflow-y: auto; }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s;
+        }
+
+        .history-item:last-child { border-bottom: none; }
+        .history-item:hover { background: #f8fafc; }
+
+        .history-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .history-dot.reg { background: var(--gold); box-shadow: 0 0 6px rgba(212,160,23,0.4); }
+        .history-dot.ret { background: var(--green); box-shadow: 0 0 6px rgba(16,185,129,0.4); }
+
+        .history-info { flex: 1; min-width: 0; }
+
+        .history-name {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .history-meta {
+            font-size: 10px;
+            color: var(--text-light);
+            margin-top: 1px;
+        }
+
+        .history-code {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 16px;
+            letter-spacing: 1px;
+            color: var(--navy);
+        }
+
+        .history-empty {
+            padding: 30px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        /* ===== NOTIFICATION ===== */
+        .notif {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 14px;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            z-index: 9999;
+            transition: transform 0.3s;
+            white-space: nowrap;
+        }
+
+        .notif.show { transform: translateX(-50%) translateY(0); }
+        .notif.success { background: var(--green); color: #fff; }
+        .notif.error { background: var(--red); color: #fff; }
+        .notif.info { background: var(--navy); color: var(--gold); }
+
+        /* ===== DASHBOARD ===== */
+        .dash-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .dash-stat {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 18px 16px;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dash-stat::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+        }
+
+        .dash-stat.ds-out::before { background: linear-gradient(90deg, var(--red), var(--orange)); }
+        .dash-stat.ds-total::before { background: linear-gradient(90deg, var(--gold), var(--gold-dark)); }
+        .dash-stat.ds-returned::before { background: linear-gradient(90deg, var(--green), var(--green-dark)); }
+        .dash-stat.ds-rate::before { background: linear-gradient(90deg, var(--navy), var(--navy-light)); }
+
+        .dash-stat-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px;
+            line-height: 1;
+        }
+
+        .ds-out .dash-stat-num { color: var(--red); }
+        .ds-total .dash-stat-num { color: var(--gold-dark); }
+        .ds-returned .dash-stat-num { color: var(--green-dark); }
+        .ds-rate .dash-stat-num { color: var(--navy); }
+
+        .dash-stat-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* Filter card */
+        .filter-card {
+            background: var(--card);
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .filter-header {
+            padding: 12px 18px;
+            background: var(--navy);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .filter-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-header svg { width: 16px; height: 16px; stroke: var(--gold); fill: none; }
+
+        .filter-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: #fff;
+        }
+
+        .filter-clear {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--gold-light);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 11px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-clear:hover { background: rgba(255,255,255,0.2); }
+
+        .filter-body {
+            padding: 14px 18px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .filter-field { }
+        .filter-field.full { grid-column: span 2; }
+
+        .filter-label {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .filter-select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            color: var(--text);
+            background: #fafbfc;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .filter-select:focus { border-color: var(--navy); }
+        .filter-select:disabled { opacity: 0.4; cursor: not-allowed; background-color: #f5f5f5; }
+
+        .filter-active-tags {
+            padding: 0 18px 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .filter-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--navy);
+            color: var(--gold-light);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-tag svg {
+            width: 10px; height: 10px;
+            stroke: var(--gold-light);
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        .filter-tag svg:hover { opacity: 1; }
+
+        /* Devices list */
+        .devices-card {
+            background: var(--card);
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .devices-header {
+            padding: 12px 18px;
+            background: linear-gradient(135deg, #dc3545, #c62828);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .devices-header svg { width: 18px; height: 18px; stroke: #fff; fill: none; }
+
+        .devices-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: #fff;
+        }
+
+        .devices-badge {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .devices-list { max-height: 500px; overflow-y: auto; }
+
+        .device-row {
+            padding: 14px 18px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s;
+        }
+
+        .device-row:last-child { border-bottom: none; }
+        .device-row:hover { background: #fafbfc; }
+
+        .device-row-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .device-row-name {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .device-row-code {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 20px;
+            letter-spacing: 2px;
+            color: var(--red);
+        }
+
+        .device-row-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .device-row-tag {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-mid);
+            background: #f1f5f9;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .device-row-time {
+            font-size: 10px;
+            color: var(--text-light);
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .device-row-time svg { width: 12px; height: 12px; stroke: var(--text-light); fill: none; }
+
+        .device-row-phone {
+            font-size: 12px;
+            color: var(--navy);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .devices-empty {
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .devices-empty svg { width: 48px; height: 48px; stroke: #ddd; fill: none; margin-bottom: 10px; }
+        .devices-empty p { font-size: 13px; color: var(--text-light); font-weight: 500; }
+
+        /* ===== SYNC BAR ===== */
+        .sync-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card);
+            border-radius: 12px;
+            padding: 10px 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .sync-status { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-mid); }
+
+        .sync-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .sync-dot.online { background: var(--green); box-shadow: 0 0 6px rgba(40,167,69,0.5); }
+        .sync-dot.offline { background: var(--red); box-shadow: 0 0 6px rgba(220,53,69,0.5); }
+        .sync-dot.syncing { animation: sync-pulse 0.6s ease-in-out; }
+
+        @keyframes sync-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.8); box-shadow: 0 0 12px rgba(40,167,69,0.8); }
+        }
+
+        .sync-time { font-size: 10px; color: var(--text-light); }
+
+        /* ===== STATS DASHBOARD ===== */
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 14px 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border-top: 3px solid var(--border);
+        }
+
+        .stat-card.gold-stat { border-top-color: var(--gold); }
+        .stat-card.green-stat { border-top-color: var(--green); }
+        .stat-card.red-stat { border-top-color: var(--red); }
+
+        .stat-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .gold-stat .stat-num { color: var(--gold-dark); }
+        .green-stat .stat-num { color: var(--green-dark); }
+        .red-stat .stat-num { color: var(--red-dark); }
+
+        .stat-label {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+
+        /* ===== PENDING BADGE ===== */
+        .pending-badge {
+            display: none;
+            background: var(--red);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 10px;
+            margin-left: 6px;
+        }
+
+        .pending-badge.show { display: inline-block; animation: fadeUp 0.3s; }
+
+        /* QR Reader overrides */
+        #reader-register img, #reader-return img { display: none !important; }
+        #reader-register, #reader-return { border: none !important; }
+
+        @media (max-width: 400px) {
+            .info-grid { grid-template-columns: 1fr; }
+            .info-cell.full { grid-column: span 1; }
+            .dash-stats { grid-template-columns: 1fr 1fr; }
+            .filter-body { grid-template-columns: 1fr; }
+            .tab-btn { font-size: 11px; letter-spacing: 1px; padding: 12px 4px; }
+            .tab-btn svg { width: 14px; height: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="top-bar">
+        <div class="top-bar-inner">
+            <div class="brand">
+                <div class="brand-badge">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="4" y="4" width="6" height="6" rx="1"/>
+                        <rect x="14" y="4" width="6" height="6" rx="1"/>
+                        <rect x="4" y="14" width="6" height="6" rx="1"/>
+                        <rect x="14" y="14" width="3" height="3"/>
+                        <line x1="20" y1="14" x2="20" y2="20"/>
+                        <line x1="14" y1="20" x2="20" y2="20"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>DEVICE TRACKER</h1>
+                    <p>Scan &amp; Register System</p>
+                </div>
+            </div>
+            <div class="status-dot"></div>
+        </div>
+    </div>
+
+    <!-- CONFIG: Paste your Google Apps Script URL in the JS below -->
+
+    <!-- TABS -->
+    <div class="tabs-container">
+        <div class="tab-bar">
+            <button class="tab-btn register active" onclick="switchTab('register')">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <line x1="20" y1="8" x2="20" y2="14"/>
+                    <line x1="23" y1="11" x2="17" y2="11"/>
+                </svg>
+                REGISTER
+            </button>
+            <button class="tab-btn return" onclick="switchTab('return')">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <polyline points="1 4 1 10 7 10"/>
+                    <path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+                </svg>
+                RETURN
+            </button>
+            <button class="tab-btn dashboard" onclick="switchTab('dashboard')">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <path d="M18 20V10M12 20V4M6 20v-6"/>
+                </svg>
+                DASHBOARD
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+
+        <!-- SYNC BAR -->
+        <div class="sync-bar">
+            <div>
+                <div class="sync-status">
+                    <div class="sync-dot" id="syncDot"></div>
+                    <span id="syncLabel">Checking...</span>
+                    <span class="pending-badge" id="pendingBadge">0 pending</span>
+                </div>
+                <div class="sync-time" id="syncTime"></div>
+            </div>
+            <div class="sync-status" style="font-size:10px; color:var(--text-light);">AUTO-SYNC</div>
+        </div>
+
+        <!-- STATS DASHBOARD -->
+        <div class="stats-row">
+            <div class="stat-card gold-stat">
+                <div class="stat-num" id="statOut">0</div>
+                <div class="stat-label">Devices Out</div>
+            </div>
+            <div class="stat-card green-stat">
+                <div class="stat-num" id="statReturned">0</div>
+                <div class="stat-label">Returned</div>
+            </div>
+            <div class="stat-card red-stat">
+                <div class="stat-num" id="statPending">0</div>
+                <div class="stat-label">Pending Sync</div>
+            </div>
+        </div>
+
+        <!-- REGISTER TAB -->
+        <div class="tab-panel active" id="panel-register">
+            <div class="scanner-card">
+                <div class="scanner-header gold">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                    <span class="scanner-title">SCAN QR TO REGISTER</span>
+                </div>
+                <div class="scanner-body">
+                    <div id="scan-area-register">
+                        <div class="scan-overlay" id="overlay-register">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5">
+                                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                                <rect x="14" y="14" width="4" height="4"/>
+                            </svg>
+                            <p>Point camera at device QR code</p>
+                            <button class="scan-btn gold-btn" onclick="startScan('register')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                                    <circle cx="12" cy="13" r="4"/>
+                                </svg>
+                                START SCANNER
+                            </button>
+                        </div>
+                        <div id="reader-register" style="display:none;"></div>
+                        <div style="text-align:center; display:none;" id="stop-register">
+                            <button class="scan-btn stop-btn" onclick="stopScan('register')" style="margin-top:12px;">
+                                STOP SCANNER
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="device-card" id="device-register"></div>
+            <div class="msg-card" id="msg-register"></div>
+
+            <!-- History -->
+            <div class="history-card" id="history-register">
+                <div class="history-header">
+                    <span class="history-title">RECENT REGISTRATIONS</span>
+                    <span class="history-count" id="reg-count">0</span>
+                </div>
+                <div class="history-list" id="reg-list">
+                    <div class="history-empty">No devices registered yet</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RETURN TAB -->
+        <div class="tab-panel" id="panel-return">
+            <div class="scanner-card">
+                <div class="scanner-header green-hd">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <polyline points="1 4 1 10 7 10"/>
+                        <path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+                    </svg>
+                    <span class="scanner-title">SCAN QR TO RETURN</span>
+                </div>
+                <div class="scanner-body">
+                    <div id="scan-area-return">
+                        <div class="scan-overlay" id="overlay-return">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5">
+                                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                                <rect x="14" y="14" width="4" height="4"/>
+                            </svg>
+                            <p>Point camera at device QR code</p>
+                            <button class="scan-btn green-btn" onclick="startScan('return')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                                    <circle cx="12" cy="13" r="4"/>
+                                </svg>
+                                START SCANNER
+                            </button>
+                        </div>
+                        <div id="reader-return" style="display:none;"></div>
+                        <div style="text-align:center; display:none;" id="stop-return">
+                            <button class="scan-btn stop-btn" onclick="stopScan('return')" style="margin-top:12px;">
+                                STOP SCANNER
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="device-card" id="device-return"></div>
+            <div class="msg-card" id="msg-return"></div>
+
+            <!-- History -->
+            <div class="history-card" id="history-return">
+                <div class="history-header">
+                    <span class="history-title">RECENT RETURNS</span>
+                    <span class="history-count" id="ret-count">0</span>
+                </div>
+                <div class="history-list" id="ret-list">
+                    <div class="history-empty">No devices returned yet</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DASHBOARD TAB -->
+        <div class="tab-panel" id="panel-dashboard">
+            <!-- Dashboard Stats -->
+            <div class="dash-stats">
+                <div class="dash-stat ds-out">
+                    <div class="dash-stat-num" id="dOut">0</div>
+                    <div class="dash-stat-label">Not Returned</div>
+                </div>
+                <div class="dash-stat ds-total">
+                    <div class="dash-stat-num" id="dTotal">0</div>
+                    <div class="dash-stat-label">Total Registered</div>
+                </div>
+                <div class="dash-stat ds-returned">
+                    <div class="dash-stat-num" id="dReturned">0</div>
+                    <div class="dash-stat-label">Returned</div>
+                </div>
+                <div class="dash-stat ds-rate">
+                    <div class="dash-stat-num" id="dRate">0%</div>
+                    <div class="dash-stat-label">Return Rate</div>
+                </div>
+            </div>
+
+            <!-- Cascading Filters -->
+            <div class="filter-card">
+                <div class="filter-header">
+                    <div class="filter-header-left">
+                        <svg viewBox="0 0 24 24" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                        <span class="filter-title">FILTER BY LOCATION</span>
+                    </div>
+                    <button class="filter-clear" onclick="clearDashFilters()">CLEAR ALL</button>
+                </div>
+                <div class="filter-body">
+                    <div class="filter-field">
+                        <div class="filter-label">District</div>
+                        <select class="filter-select" id="fDistrict" onchange="onDashFilter('district')">
+                            <option value="">All Districts</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <div class="filter-label">Chiefdom</div>
+                        <select class="filter-select" id="fChiefdom" disabled onchange="onDashFilter('chiefdom')">
+                            <option value="">All Chiefdoms</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <div class="filter-label">Section</div>
+                        <select class="filter-select" id="fSection" disabled onchange="onDashFilter('section')">
+                            <option value="">All Sections</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <div class="filter-label">Health Facility</div>
+                        <select class="filter-select" id="fFacility" disabled onchange="onDashFilter('facility')">
+                            <option value="">All Facilities</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <div class="filter-label">Community</div>
+                        <select class="filter-select" id="fCommunity" disabled onchange="onDashFilter('community')">
+                            <option value="">All Communities</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <div class="filter-label">School</div>
+                        <select class="filter-select" id="fSchool" disabled onchange="onDashFilter('school')">
+                            <option value="">All Schools</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-active-tags" id="filterTags"></div>
+            </div>
+
+            <!-- Unreturned Devices List -->
+            <div class="devices-card">
+                <div class="devices-header">
+                    <div class="devices-title">
+                        <svg viewBox="0 0 24 24" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        DEVICES NOT RETURNED
+                    </div>
+                    <span class="devices-badge" id="dListCount">0</span>
+                </div>
+                <div class="devices-list" id="dList">
+                    <div class="devices-empty">
+                        <svg viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="16 8 10 16 7 13"/></svg>
+                        <p>All devices have been returned!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Returned Devices List -->
+            <div class="devices-card">
+                <div class="devices-header" style="background: linear-gradient(135deg, var(--green), var(--green-dark));">
+                    <div class="devices-title">
+                        <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        RETURNED DEVICES
+                    </div>
+                    <span class="devices-badge" id="dRetListCount">0</span>
+                </div>
+                <div class="devices-list" id="dRetList">
+                    <div class="devices-empty">
+                        <svg viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        <p>No devices returned yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION -->
+    <div class="notif" id="notif"></div>
+
+<script>
+// ============================================
+// STATE & STORAGE
+// ============================================
+let scanners = { register: null, return: null };
+let registeredDevices = JSON.parse(localStorage.getItem('dt_registered') || '[]');
+let returnedDevices = JSON.parse(localStorage.getItem('dt_returned') || '[]');
+let pendingQueue = JSON.parse(localStorage.getItem('dt_pending') || '[]');
+let isOnline = navigator.onLine;
+let lastSyncTime = localStorage.getItem('dt_last_sync') || '';
+
+// =============================================
+// >>> PASTE YOUR GOOGLE APPS SCRIPT URL HERE <<<
+// =============================================
+const SCRIPT_URL = 'PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+// =============================================
+function hasValidURL() { return SCRIPT_URL && SCRIPT_URL.startsWith('https://'); }
+
+function saveLocal() {
+    localStorage.setItem('dt_registered', JSON.stringify(registeredDevices));
+    localStorage.setItem('dt_returned', JSON.stringify(returnedDevices));
+    localStorage.setItem('dt_pending', JSON.stringify(pendingQueue));
+}
+
+// ============================================
+// ONLINE/OFFLINE
+// ============================================
+function updateOnlineStatus() {
+    isOnline = navigator.onLine;
+    const dot = document.getElementById('syncDot');
+    const label = document.getElementById('syncLabel');
+    dot.className = 'sync-dot ' + (isOnline ? 'online' : 'offline');
+    label.textContent = isOnline ? 'Online' : 'Offline';
+    
+    if (isOnline && pendingQueue.length > 0) {
+        flushPendingQueue();
+    }
+    if (isOnline && hasValidURL()) {
+        syncFromSheets();
+    }
+}
+
+window.addEventListener('offline', updateOnlineStatus);
+
+// ============================================
+// TABS
+// ============================================
+function switchTab(tab) {
+    stopScan('register');
+    stopScan('return');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('.tab-btn.' + tab).classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+    document.getElementById('device-register').classList.remove('show');
+    document.getElementById('device-return').classList.remove('show');
+    document.getElementById('msg-register').classList.remove('show');
+    document.getElementById('msg-return').classList.remove('show');
+    if (tab === 'dashboard') updateDashboard();
+}
+
+// ============================================
+// QR SCANNER
+// ============================================
+function startScan(mode) {
+    document.getElementById('overlay-' + mode).style.display = 'none';
+    document.getElementById('reader-' + mode).style.display = 'block';
+    document.getElementById('stop-' + mode).style.display = 'block';
+    document.getElementById('device-' + mode).classList.remove('show');
+    document.getElementById('msg-' + mode).classList.remove('show');
+
+    scanners[mode] = new Html5Qrcode('reader-' + mode);
+    scanners[mode].start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        function(decoded) { onScanResult(decoded, mode); },
+        function(err) {}
+    ).catch(function(err) {
+        showNotif('Camera error: ' + err, 'error');
+        resetScanUI(mode);
+    });
+}
+
+function stopScan(mode) {
+    if (scanners[mode]) {
+        scanners[mode].stop().then(() => { scanners[mode].clear(); scanners[mode] = null; }).catch(() => {});
+    }
+    resetScanUI(mode);
+}
+
+function resetScanUI(mode) {
+    document.getElementById('overlay-' + mode).style.display = '';
+    document.getElementById('reader-' + mode).style.display = 'none';
+    document.getElementById('stop-' + mode).style.display = 'none';
+}
+
+// ============================================
+// SCAN RESULT
+// ============================================
+function onScanResult(decoded, mode) {
+    stopScan(mode);
+    let data;
+    try { data = JSON.parse(decoded); } catch (e) {
+        showMessage(mode, 'error', 'INVALID QR CODE', 'This QR code is not a valid device code.', '');
+        return;
+    }
+    if (!data.code) {
+        showMessage(mode, 'error', 'NO DEVICE CODE', 'QR code does not contain a device code.', '');
+        return;
+    }
+    if (mode === 'register') { handleRegister(data); }
+    else { handleReturn(data); }
+}
+
+// ============================================
+// REGISTER
+// ============================================
+function handleRegister(data) {
+    const code = data.code;
+
+    // Check if already registered and not returned
+    const activeReg = registeredDevices.find(d => d.code === code && !d.returned);
+    if (activeReg) {
+        showDeviceCard('register', data, 'red-top', 'badge-error', 'ALREADY REGISTERED',
+            'This device (Code: ' + code + ') was already registered to <strong>' + (activeReg.name || 'Unknown') + '</strong> on ' + new Date(activeReg.timestamp).toLocaleString() + ' and has not been returned yet. Please return the device first before re-registering.');
+        return;
+    }
+
+    showDeviceCard('register', data, 'gold-top', 'badge-register', 'READY TO REGISTER', null, true);
+}
+
+function confirmRegister() {
+    const card = document.getElementById('device-register');
+    const data = JSON.parse(card.dataset.deviceData);
+    const btn = card.querySelector('.action-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner-sm"></div> REGISTERING...';
+
+    const record = {
+        code: data.code,
+        name: data.name || '',
+        phone: data.phone || '',
+        district: data.district || '',
+        chiefdom: data.chiefdom || '',
+        section: data.section || '',
+        facility: data.facility || '',
+        community: data.community || '',
+        school: data.school || '',
+        action: 'REGISTER',
+        timestamp: new Date().toISOString(),
+        returned: false,
+        synced: false
+    };
+
+    registeredDevices.push(record);
+    saveLocal();
+
+    submitToSheets(record, function(success) {
+        if (success) {
+            record.synced = true;
+            saveLocal();
+        } else {
+            pendingQueue.push(record);
+            saveLocal();
+        }
+        card.classList.remove('show');
+        showMessage('register', 'success', 'DEVICE REGISTERED',
+            data.name + ' — Code: ' + data.code,
+            'Device has been registered and is now tracked.');
+        updateAll();
+        showNotif('Device registered!', 'success');
+    });
+}
+
+// ============================================
+// RETURN
+// ============================================
+function handleReturn(data) {
+    const code = data.code;
+    const regIndex = registeredDevices.findIndex(d => d.code === code && !d.returned);
+    if (regIndex === -1) {
+        const lastReturned = [...returnedDevices].reverse().find(d => d.code === code);
+        const everRegistered = registeredDevices.find(d => d.code === code);
+
+        if (lastReturned) {
+            showDeviceCard('return', data, 'red-top', 'badge-error', 'ALREADY RETURNED',
+                'This device (Code: ' + code + ') was already returned by <strong>' + (lastReturned.name || 'Unknown') + '</strong> on ' + new Date(lastReturned.timestamp).toLocaleString() + '. It cannot be returned again.');
+        } else if (!everRegistered) {
+            showDeviceCard('return', data, 'red-top', 'badge-error', 'NOT REGISTERED',
+                'This device (Code: ' + code + ') was never registered in the system. A device must be registered first before it can be returned.');
+        } else {
+            showDeviceCard('return', data, 'red-top', 'badge-error', 'ALREADY RETURNED',
+                'This device (Code: ' + code + ') was already returned. It cannot be returned again.');
+        }
+        return;
+    }
+    showDeviceCard('return', data, 'green-top', 'badge-returned', 'READY TO RETURN', null, true);
+}
+
+function confirmReturn() {
+    const card = document.getElementById('device-return');
+    const data = JSON.parse(card.dataset.deviceData);
+    const btn = card.querySelector('.action-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner-sm"></div> PROCESSING...';
+
+    const regIndex = registeredDevices.findIndex(d => d.code === data.code && !d.returned);
+    if (regIndex !== -1) {
+        registeredDevices[regIndex].returned = true;
+        registeredDevices[regIndex].returned_at = new Date().toISOString();
+    }
+
+    const record = {
+        code: data.code,
+        name: data.name || '',
+        phone: data.phone || '',
+        district: data.district || '',
+        chiefdom: data.chiefdom || '',
+        section: data.section || '',
+        facility: data.facility || '',
+        community: data.community || '',
+        school: data.school || '',
+        action: 'RETURN',
+        timestamp: new Date().toISOString(),
+        synced: false
+    };
+
+    returnedDevices.push(record);
+    saveLocal();
+
+    submitToSheets(record, function(success) {
+        if (success) {
+            record.synced = true;
+            saveLocal();
+        } else {
+            pendingQueue.push(record);
+            saveLocal();
+        }
+        card.classList.remove('show');
+        showMessage('return', 'success', 'DEVICE RETURNED',
+            data.name + ' — Code: ' + data.code,
+            'Device has been returned successfully.');
+        updateAll();
+        showNotif('Device returned!', 'success');
+    });
+}
+
+// ============================================
+// DISPLAY HELPERS
+// ============================================
+function showDeviceCard(mode, data, topClass, badgeClass, badgeText, note, showAction) {
+    const card = document.getElementById('device-' + mode);
+    document.getElementById('msg-' + mode).classList.remove('show');
+
+    const statusIcon = badgeClass === 'badge-register' ?
+        '<svg viewBox="0 0 24 24" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' :
+        badgeClass === 'badge-returned' ?
+        '<svg viewBox="0 0 24 24" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>' :
+        badgeClass === 'badge-error' ?
+        '<svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' :
+        '<svg viewBox="0 0 24 24" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+
+    let actionHTML = '';
+    if (showAction && mode === 'register') {
+        actionHTML = '<button class="action-btn register-action" onclick="confirmRegister()"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>REGISTER THIS DEVICE</button>';
+    } else if (showAction && mode === 'return') {
+        actionHTML = '<button class="action-btn return-action" onclick="confirmReturn()"><svg viewBox="0 0 24 24" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>CONFIRM RETURN</button>';
+    }
+
+    let noteHTML = note ? '<div style="background:' + (badgeClass === 'badge-error' ? 'var(--red-bg)' : 'var(--orange-bg)') + ';padding:10px 14px;border-radius:10px;font-size:13px;color:var(--text-mid);font-weight:500;margin-bottom:16px;">' + note + '</div>' : '';
+
+    card.innerHTML = `
+        <div class="device-card-top ${topClass}">
+            <div class="device-status-badge ${badgeClass}">${statusIcon} ${badgeText}</div>
+            <div class="device-person">${data.name || 'Unknown'}</div>
+            <div class="device-phone">${data.phone || '—'}</div>
+            <div class="device-code-display">${data.code}</div>
+        </div>
+        <div class="device-body">
+            ${noteHTML}
+            <div class="info-grid">
+                <div class="info-cell"><div class="info-key">District</div><div class="info-val">${data.district || '—'}</div></div>
+                <div class="info-cell"><div class="info-key">Chiefdom</div><div class="info-val">${data.chiefdom || '—'}</div></div>
+                <div class="info-cell"><div class="info-key">Section</div><div class="info-val">${data.section || '—'}</div></div>
+                <div class="info-cell"><div class="info-key">Health Facility</div><div class="info-val">${data.facility || '—'}</div></div>
+                <div class="info-cell"><div class="info-key">Community</div><div class="info-val">${data.community || '—'}</div></div>
+                <div class="info-cell"><div class="info-key">School</div><div class="info-val">${data.school || '—'}</div></div>
+            </div>
+            ${actionHTML}
+        </div>
+    `;
+    card.dataset.deviceData = JSON.stringify(data);
+    card.classList.add('show');
+}
+
+function showMessage(mode, type, title, text, detail) {
+    const card = document.getElementById('msg-' + mode);
+    document.getElementById('device-' + mode).classList.remove('show');
+    const iconMap = {
+        success: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="16 8 10 16 7 13"/></svg>',
+        error: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        warning: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+    };
+    card.className = 'msg-card show ' + type + '-msg';
+    card.innerHTML = `
+        ${iconMap[type]}
+        <div class="msg-title">${title}</div>
+        <div class="msg-text">${text}</div>
+        ${detail ? '<div class="msg-detail">' + detail + '</div>' : ''}
+        <button class="scan-again-btn" onclick="scanAgain('${mode}')">SCAN ANOTHER</button>
+    `;
+}
+
+function scanAgain(mode) {
+    document.getElementById('msg-' + mode).classList.remove('show');
+    document.getElementById('device-' + mode).classList.remove('show');
+    startScan(mode);
+}
+
+// ============================================
+// GOOGLE SHEETS - SUBMIT
+// ============================================
+function submitToSheets(record, callback) {
+    if (!hasValidURL() || !isOnline) {
+        callback(false);
+        return;
+    }
+    fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record)
+    }).then(() => {
+        callback(true);
+    }).catch(err => {
+        console.error('Sheets submit error:', err);
+        callback(false);
+    });
+}
+
+// ============================================
+// PENDING QUEUE - FLUSH WHEN ONLINE
+// ============================================
+async function flushPendingQueue() {
+    if (!hasValidURL() || !isOnline || pendingQueue.length === 0) return;
+
+    showNotif('Syncing ' + pendingQueue.length + ' pending...', 'info');
+    const toSync = [...pendingQueue];
+    let synced = 0;
+
+    for (const record of toSync) {
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(record)
+            });
+            // Remove from pending
+            const idx = pendingQueue.findIndex(p => p.code === record.code && p.timestamp === record.timestamp);
+            if (idx !== -1) pendingQueue.splice(idx, 1);
+            synced++;
+        } catch (e) {
+            console.error('Sync failed for:', record.code);
+            break; // Stop on first failure
+        }
+    }
+
+    saveLocal();
+    updateAll();
+    if (synced > 0) showNotif(synced + ' record(s) synced!', 'success');
+}
+
+// ============================================
+// GOOGLE SHEETS - PULL / SYNC
+// ============================================
+async function syncFromSheets() {
+    if (!hasValidURL() || !isOnline) return;
+
+    try {
+        await flushPendingQueue();
+        const res = await fetch(SCRIPT_URL + '?action=getAll&t=' + Date.now());
+        const json = await res.json();
+
+        if (json.status === 'success' && json.records) {
+            mergeServerRecords(json.records);
+            lastSyncTime = new Date().toISOString();
+            localStorage.setItem('dt_last_sync', lastSyncTime);
+            updateAll();
+        }
+    } catch (e) {
+        console.log('Sync error:', e);
+    }
+}
+
+function mergeServerRecords(records) {
+    // Rebuild from server data + keep any unsynced local records
+    const serverRegistered = [];
+    const serverReturned = [];
+
+    records.forEach(r => {
+        const rec = {
+            code: r.code || '',
+            name: r.name || '',
+            phone: r.phone || '',
+            district: r.district || '',
+            chiefdom: r.chiefdom || '',
+            section: r.section || '',
+            facility: r.facility || '',
+            community: r.community || '',
+            school: r.school || '',
+            timestamp: r.timestamp || '',
+            synced: true
+        };
+
+        if (r.action === 'REGISTER') {
+            rec.action = 'REGISTER';
+            rec.returned = (r.status === 'RETURNED');
+            rec.returned_at = r.returned_at || '';
+            serverRegistered.push(rec);
+        } else if (r.action === 'RETURN') {
+            rec.action = 'RETURN';
+            serverReturned.push(rec);
+        }
+    });
+
+    // Keep local unsynced records
+    const localUnsyncedReg = registeredDevices.filter(d => !d.synced);
+    const localUnsyncedRet = returnedDevices.filter(d => !d.synced);
+
+    // Merge: server + unsynced local (avoid duplicates by code+timestamp)
+    registeredDevices = [...serverRegistered];
+    localUnsyncedReg.forEach(lr => {
+        if (!registeredDevices.find(sr => sr.code === lr.code && sr.timestamp === lr.timestamp)) {
+            registeredDevices.push(lr);
+        }
+    });
+
+    returnedDevices = [...serverReturned];
+    localUnsyncedRet.forEach(lr => {
+        if (!returnedDevices.find(sr => sr.code === lr.code && sr.timestamp === lr.timestamp)) {
+            returnedDevices.push(lr);
+        }
+    });
+
+    saveLocal();
+}
+
+// ============================================
+// UPDATE ALL DISPLAYS
+// ============================================
+function updateAll() {
+    updateStats();
+    updateHistory();
+    updateSyncInfo();
+    updatePendingBadge();
+    updateDashboard();
+}
+
+function updateStats() {
+    const devicesOut = registeredDevices.filter(d => !d.returned).length;
+    const devicesReturned = returnedDevices.length;
+    const pendingCount = pendingQueue.length;
+
+    document.getElementById('statOut').textContent = devicesOut;
+    document.getElementById('statReturned').textContent = devicesReturned;
+    document.getElementById('statPending').textContent = pendingCount;
+}
+
+function updateHistory() {
+    // Registrations — show all (not returned on top, then returned)
+    const regList = document.getElementById('reg-list');
+    const outDevices = registeredDevices.filter(d => !d.returned);
+    const allRegs = [...outDevices].reverse().slice(0, 30);
+    document.getElementById('reg-count').textContent = outDevices.length;
+
+    if (allRegs.length === 0) {
+        regList.innerHTML = '<div class="history-empty">No devices registered yet</div>';
+    } else {
+        regList.innerHTML = allRegs.map(d => `
+            <div class="history-item">
+                <div class="history-dot reg"></div>
+                <div class="history-info">
+                    <div class="history-name">${d.name || 'Unknown'}${!d.synced ? ' <span style="color:var(--red);font-size:9px;">● unsent</span>' : ''}</div>
+                    <div class="history-meta">${d.district || ''} · ${d.school || ''} · ${formatTime(d.timestamp)}</div>
+                </div>
+                <div class="history-code">${d.code}</div>
+            </div>
+        `).join('');
+    }
+
+    // Returns
+    const retList = document.getElementById('ret-list');
+    const allRets = [...returnedDevices].reverse().slice(0, 30);
+    document.getElementById('ret-count').textContent = returnedDevices.length;
+
+    if (allRets.length === 0) {
+        retList.innerHTML = '<div class="history-empty">No devices returned yet</div>';
+    } else {
+        retList.innerHTML = allRets.map(d => `
+            <div class="history-item">
+                <div class="history-dot ret"></div>
+                <div class="history-info">
+                    <div class="history-name">${d.name || 'Unknown'}${!d.synced ? ' <span style="color:var(--red);font-size:9px;">● unsent</span>' : ''}</div>
+                    <div class="history-meta">${d.district || ''} · ${d.school || ''} · ${formatTime(d.timestamp)}</div>
+                </div>
+                <div class="history-code">${d.code}</div>
+            </div>
+        `).join('');
+    }
+}
+
+function updateSyncInfo() {
+    const timeEl = document.getElementById('syncTime');
+    if (lastSyncTime) {
+        timeEl.textContent = 'Last sync: ' + formatTime(lastSyncTime) + ' · Auto-sync: 30s';
+    } else {
+        timeEl.textContent = hasValidURL() ? 'Auto-sync: 30s · Waiting...' : 'Google Sheets URL not configured';
+    }
+}
+
+function updatePendingBadge() {
+    const badge = document.getElementById('pendingBadge');
+    if (pendingQueue.length > 0) {
+        badge.textContent = pendingQueue.length + ' pending';
+        badge.classList.add('show');
+    } else {
+        badge.classList.remove('show');
+    }
+}
+
+function formatTime(ts) {
+    if (!ts) return '';
+    try {
+        const d = new Date(ts);
+        const now = new Date();
+        const diff = now - d;
+        if (diff < 60000) return 'Just now';
+        if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return ts; }
+}
+
+// ============================================
+// NOTIFICATION
+// ============================================
+function showNotif(msg, type) {
+    const el = document.getElementById('notif');
+    el.textContent = msg;
+    el.className = 'notif show ' + (type || 'info');
+    setTimeout(() => { el.className = 'notif'; }, 2500);
+}
+
+// ============================================
+// DASHBOARD
+// ============================================
+function updateDashboard() {
+    const allRegs = registeredDevices;
+    const outDevices = allRegs.filter(d => !d.returned);
+    const returnedCount = returnedDevices.length;
+    const totalReg = allRegs.length;
+    const rate = totalReg > 0 ? Math.round((returnedCount / totalReg) * 100) : 0;
+
+    document.getElementById('dOut').textContent = outDevices.length;
+    document.getElementById('dTotal').textContent = totalReg;
+    document.getElementById('dReturned').textContent = returnedCount;
+    document.getElementById('dRate').textContent = rate + '%';
+
+    // Populate district filter
+    populateDashFilter();
+
+    // Render filtered list
+    renderDashList();
+}
+
+function populateDashFilter() {
+    const outDevices = registeredDevices.filter(d => !d.returned);
+    const districts = [...new Set(outDevices.map(d => d.district).filter(Boolean))].sort();
+
+    const sel = document.getElementById('fDistrict');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All Districts (' + districts.length + ')</option>';
+    districts.forEach(d => { sel.innerHTML += '<option value="' + d + '">' + d + '</option>'; });
+    if (current && districts.includes(current)) sel.value = current;
+}
+
+function onDashFilter(level) {
+    const district = document.getElementById('fDistrict').value;
+    const chiefdom = document.getElementById('fChiefdom').value;
+    const section = document.getElementById('fSection').value;
+    const facility = document.getElementById('fFacility').value;
+    const community = document.getElementById('fCommunity').value;
+
+    const levels = ['district', 'chiefdom', 'section', 'facility', 'community', 'school'];
+    const selIds = ['fDistrict', 'fChiefdom', 'fSection', 'fFacility', 'fCommunity', 'fSchool'];
+    const defaults = ['All Districts', 'All Chiefdoms', 'All Sections', 'All Facilities', 'All Communities', 'All Schools'];
+    const idx = levels.indexOf(level);
+
+    // Clear downstream
+    for (let i = idx + 1; i < levels.length; i++) {
+        const s = document.getElementById(selIds[i]);
+        s.innerHTML = '<option value="">' + defaults[i] + '</option>';
+        s.disabled = true;
+    }
+
+    // Get filtered unreturned devices
+    const outDevices = registeredDevices.filter(d => !d.returned);
+
+    if (level === 'district' && district) {
+        const filtered = outDevices.filter(d => d.district === district);
+        const items = [...new Set(filtered.map(d => d.chiefdom).filter(Boolean))].sort();
+        fillFilter('fChiefdom', items, 'All Chiefdoms');
+    }
+    if (level === 'chiefdom' && chiefdom) {
+        const filtered = outDevices.filter(d => d.district === district && d.chiefdom === chiefdom);
+        const items = [...new Set(filtered.map(d => d.section).filter(Boolean))].sort();
+        fillFilter('fSection', items, 'All Sections');
+    }
+    if (level === 'section' && section) {
+        const filtered = outDevices.filter(d => d.district === district && d.chiefdom === chiefdom && d.section === section);
+        const items = [...new Set(filtered.map(d => d.facility).filter(Boolean))].sort();
+        fillFilter('fFacility', items, 'All Facilities');
+    }
+    if (level === 'facility' && facility) {
+        const filtered = outDevices.filter(d => d.district === district && d.chiefdom === chiefdom && d.section === section && d.facility === facility);
+        const items = [...new Set(filtered.map(d => d.community).filter(Boolean))].sort();
+        fillFilter('fCommunity', items, 'All Communities');
+    }
+    if (level === 'community' && community) {
+        const filtered = outDevices.filter(d => d.district === district && d.chiefdom === chiefdom && d.section === section && d.facility === facility && d.community === community);
+        const items = [...new Set(filtered.map(d => d.school).filter(Boolean))].sort();
+        fillFilter('fSchool', items, 'All Schools');
+    }
+
+    updateFilterTags();
+    renderDashList();
+}
+
+function fillFilter(selId, items, defaultText) {
+    const sel = document.getElementById(selId);
+    sel.innerHTML = '<option value="">' + defaultText + ' (' + items.length + ')</option>';
+    items.forEach(item => { sel.innerHTML += '<option value="' + item + '">' + item + '</option>'; });
+    sel.disabled = false;
+}
+
+function clearDashFilters() {
+    const selIds = ['fDistrict', 'fChiefdom', 'fSection', 'fFacility', 'fCommunity', 'fSchool'];
+    const defaults = ['All Districts', 'All Chiefdoms', 'All Sections', 'All Facilities', 'All Communities', 'All Schools'];
+    selIds.forEach((id, i) => {
+        const s = document.getElementById(id);
+        if (i === 0) { s.value = ''; }
+        else { s.innerHTML = '<option value="">' + defaults[i] + '</option>'; s.disabled = true; }
+    });
+    document.getElementById('filterTags').innerHTML = '';
+    populateDashFilter();
+    renderDashList();
+}
+
+function updateFilterTags() {
+    const tags = [];
+    const selIds = ['fDistrict', 'fChiefdom', 'fSection', 'fFacility', 'fCommunity', 'fSchool'];
+    const labels = ['District', 'Chiefdom', 'Section', 'Facility', 'Community', 'School'];
+    selIds.forEach((id, i) => {
+        const val = document.getElementById(id).value;
+        if (val) tags.push({ label: labels[i], value: val, level: ['district','chiefdom','section','facility','community','school'][i] });
+    });
+
+    const tagsEl = document.getElementById('filterTags');
+    if (tags.length === 0) { tagsEl.innerHTML = ''; return; }
+
+    tagsEl.innerHTML = tags.map(t =>
+        '<span class="filter-tag">' + t.label + ': ' + t.value + '</span>'
+    ).join('');
+}
+
+function renderDashList() {
+    const district = document.getElementById('fDistrict').value;
+    const chiefdom = document.getElementById('fChiefdom').value;
+    const section = document.getElementById('fSection').value;
+    const facility = document.getElementById('fFacility').value;
+    const community = document.getElementById('fCommunity').value;
+    const school = document.getElementById('fSchool').value;
+
+    let devices = registeredDevices.filter(d => !d.returned);
+
+    if (district) devices = devices.filter(d => d.district === district);
+    if (chiefdom) devices = devices.filter(d => d.chiefdom === chiefdom);
+    if (section) devices = devices.filter(d => d.section === section);
+    if (facility) devices = devices.filter(d => d.facility === facility);
+    if (community) devices = devices.filter(d => d.community === community);
+    if (school) devices = devices.filter(d => d.school === school);
+
+    // Sort newest first
+    devices.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    document.getElementById('dListCount').textContent = devices.length;
+
+    const listEl = document.getElementById('dList');
+
+    if (devices.length === 0) {
+        listEl.innerHTML = `
+            <div class="devices-empty">
+                <svg viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="16 8 10 16 7 13"/></svg>
+                <p>${(district || chiefdom || section) ? 'No unreturned devices match this filter' : 'All devices have been returned!'}</p>
+            </div>`;
+        return;
+    }
+
+    listEl.innerHTML = devices.map(d => `
+        <div class="device-row">
+            <div class="device-row-top">
+                <div class="device-row-name">${d.name || 'Unknown'}</div>
+                <div class="device-row-code">${d.code}</div>
+            </div>
+            <div class="device-row-phone">
+                <svg style="width:12px;height:12px;stroke:var(--navy);fill:none;vertical-align:-2px;margin-right:3px;" viewBox="0 0 24 24" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                ${d.phone || '—'}
+            </div>
+            <div class="device-row-details">
+                ${d.district ? '<span class="device-row-tag">' + d.district + '</span>' : ''}
+                ${d.chiefdom ? '<span class="device-row-tag">' + d.chiefdom + '</span>' : ''}
+                ${d.facility ? '<span class="device-row-tag">' + d.facility + '</span>' : ''}
+                ${d.school ? '<span class="device-row-tag">' + d.school + '</span>' : ''}
+            </div>
+            <div class="device-row-time">
+                <svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Registered: ${formatTime(d.timestamp)}
+            </div>
+        </div>
+    `).join('');
+
+    // ---- Returned devices list ----
+    renderReturnedList(district, chiefdom, section, facility, community, school);
+}
+
+function renderReturnedList(district, chiefdom, section, facility, community, school) {
+    let returned = [...returnedDevices];
+
+    if (district) returned = returned.filter(d => d.district === district);
+    if (chiefdom) returned = returned.filter(d => d.chiefdom === chiefdom);
+    if (section) returned = returned.filter(d => d.section === section);
+    if (facility) returned = returned.filter(d => d.facility === facility);
+    if (community) returned = returned.filter(d => d.community === community);
+    if (school) returned = returned.filter(d => d.school === school);
+
+    returned.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    document.getElementById('dRetListCount').textContent = returned.length;
+    const listEl = document.getElementById('dRetList');
+
+    if (returned.length === 0) {
+        listEl.innerHTML = `
+            <div class="devices-empty">
+                <svg viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <p>${(district || chiefdom) ? 'No returned devices match this filter' : 'No devices returned yet'}</p>
+            </div>`;
+        return;
+    }
+
+    listEl.innerHTML = returned.map(d => `
+        <div class="device-row">
+            <div class="device-row-top">
+                <div class="device-row-name">${d.name || 'Unknown'}</div>
+                <div class="device-row-code" style="color:var(--green-dark);">${d.code}</div>
+            </div>
+            <div class="device-row-phone">
+                <svg style="width:12px;height:12px;stroke:var(--navy);fill:none;vertical-align:-2px;margin-right:3px;" viewBox="0 0 24 24" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                ${d.phone || '—'}
+            </div>
+            <div class="device-row-details">
+                ${d.district ? '<span class="device-row-tag">' + d.district + '</span>' : ''}
+                ${d.chiefdom ? '<span class="device-row-tag">' + d.chiefdom + '</span>' : ''}
+                ${d.facility ? '<span class="device-row-tag">' + d.facility + '</span>' : ''}
+                ${d.school ? '<span class="device-row-tag">' + d.school + '</span>' : ''}
+            </div>
+            <div class="device-row-time" style="color:var(--green-dark);">
+                <svg viewBox="0 0 24 24" stroke-width="2" style="stroke:var(--green-dark);"><polyline points="20 6 9 17 4 12"/></svg>
+                Returned: ${formatTime(d.timestamp)}
+            </div>
+        </div>
+    `).join('');
+}
+
+// ============================================
+// AUTO-SYNC
+// ============================================
+let autoSyncInterval = null;
+const SYNC_INTERVAL = 30000; // 30 seconds
+
+function startAutoSync() {
+    if (autoSyncInterval) clearInterval(autoSyncInterval);
+    autoSyncInterval = setInterval(() => {
+        if (isOnline && hasValidURL()) {
+            if (pendingQueue.length > 0) flushPendingQueue();
+            silentSync();
+        }
+    }, SYNC_INTERVAL);
+}
+
+// Silent sync — no notifications unless new data found
+async function silentSync() {
+    if (!hasValidURL() || !isOnline) return;
+
+    const dot = document.getElementById('syncDot');
+    dot.classList.add('syncing');
+    setTimeout(() => dot.classList.remove('syncing'), 600);
+
+    try {
+        const res = await fetch(SCRIPT_URL + '?action=getAll&t=' + Date.now());
+        const json = await res.json();
+
+        if (json.status === 'success' && json.records) {
+            const prevRegCount = registeredDevices.length;
+            const prevRetCount = returnedDevices.length;
+
+            mergeServerRecords(json.records);
+
+            lastSyncTime = new Date().toISOString();
+            localStorage.setItem('dt_last_sync', lastSyncTime);
+
+            const newRegs = registeredDevices.length - prevRegCount;
+            const newRets = returnedDevices.length - prevRetCount;
+
+            if (newRegs > 0 || newRets > 0) {
+                let msg = '';
+                if (newRegs > 0) msg += newRegs + ' new registration(s)';
+                if (newRegs > 0 && newRets > 0) msg += ', ';
+                if (newRets > 0) msg += newRets + ' new return(s)';
+                showNotif(msg + ' synced!', 'success');
+            }
+
+            updateAll();
+        }
+    } catch (e) {
+        // Silent fail — don't bother user
+        console.log('Silent sync failed:', e);
+    }
+}
+
+// Sync when app comes back to focus (user switches back to tab)
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && isOnline && hasValidURL()) {
+        silentSync();
+    }
+});
+
+// Sync when coming back online
+window.addEventListener('online', () => {
+    updateOnlineStatus();
+    if (hasValidURL()) {
+        showNotif('Back online — syncing...', 'info');
+        setTimeout(() => {
+            flushPendingQueue();
+            silentSync();
+        }, 1000);
+    }
+});
+
+// ============================================
+// INIT
+// ============================================
+updateOnlineStatus();
+updateAll();
+
+// Initial sync on load
+if (isOnline && hasValidURL()) {
+    setTimeout(() => { silentSync(); }, 500);
+}
+
+// Start auto-sync loop
+startAutoSync();
+</script>
+</body>
+</html>
