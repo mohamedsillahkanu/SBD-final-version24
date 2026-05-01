@@ -1,7 +1,8 @@
-// ============================================================    
-//  ICF-SL  ai_agent.js
-//  • Analysis dashboard — fetches from ICF-SL Server via GAS
-//  • AI Agent modal (GAS-backed Claude chat)
+// ============================================================
+// ICF-SL  ai_agent.js
+// • Analysis dashboard — fetches from ICF-SL Server via GAS
+// • AI Agent modal (GAS-backed Claude chat)
+// • Targets filtered by School Status = "Old" from CSV
 // ============================================================
 (function () {
     'use strict';
@@ -267,7 +268,6 @@
                 const rows = d.rows||d.data||(Array.isArray(d)?d:null);
                 if(rows&&rows.length>0){
                     console.log('[Analysis] Loaded',rows.length,'rows from GAS');
-                    // Log first row to verify field values
                     const r0 = rows[0];
                     console.log('[Analysis] Sample row:',{
                         total_pupils: r0.total_pupils,
@@ -284,16 +284,10 @@
         return [];
     }
 
-
-    // Helper: read a numeric value from a row using column label
-    // Tries both the field name and the label so it works regardless of what GAS returns
     function n(r,key,fallback){
-        // key = field name (GAS) or label (CSV)
-        // tries key first, then fallback, then label variants
         let v = r[key];
         if((v===undefined||v===''||v===null) && fallback) v = r[fallback];
         if(v===undefined||v===null||v==='') return 0;
-        // Strip comma formatting, handle locale decimals
         const clean = String(v).replace(/,/g,'').trim();
         return parseFloat(clean)||0;
     }
@@ -303,8 +297,6 @@
         return String(v||'').trim();
     }
 
-
-
     async function fetchCount(){
         try{
             const r=await fetch(GAS_URL+'?action=count');
@@ -313,43 +305,95 @@
         }catch{return'?';}
     }
 
-    function buildTargetsFromCSV() {
-        const data = window.ALL_LOCATION_DATA || {};
-        const targets = {};
-        for (const district in data) {
-            const dk = district.trim().toLowerCase();
-            const dSet = new Set();
-            for (const chiefdom in data[district]) {
-                const ck = chiefdom.trim().toLowerCase();
-                const cSet = new Set();
-                for (const phu in data[district][chiefdom]) {
-                    const pk = phu.trim().toLowerCase();
-                    const pSet = new Set();
-                    for (const community in data[district][chiefdom][phu]) {
-                        const comk = community.trim().toLowerCase();
-                        const schools = data[district][chiefdom][phu][community];
-                        if (!Array.isArray(schools)) continue;
-                        schools.forEach(sc => {
-                            if (!sc) return;
-                            const fullKey = dk+'|'+ck+'|'+pk+'|'+comk+'|'+sc.trim().toLowerCase();
-                            pSet.add(fullKey); cSet.add(fullKey); dSet.add(fullKey);
-                        });
-                    }
-                    if (pSet.size > 0) targets[dk+'|'+ck+'|'+pk] = pSet.size;
+    // ════════════════════════════════════════════════════════
+    //  SCHOOL STATUS CSV PARSING & TARGET BUILDING
+    //  FILTERS BY "School Status" = "Old"
+    // ════════════════════════════════════════════════════════
+    
+    function parseSchoolStatusCSV() {
+        return new Promise((resolve) => {
+            Papa.parse('./cascading_data.csv', {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    window._SCHOOL_STATUS_DATA = results.data || [];
+                    console.log('[Targets] Loaded', window._SCHOOL_STATUS_DATA.length, 'schools from CSV');
+                    const oldCount = window._SCHOOL_STATUS_DATA.filter(r => (r['School Status'] || '').trim() === 'Old').length;
+                    const newCount = window._SCHOOL_STATUS_DATA.filter(r => (r['School Status'] || '').trim() === 'New').length;
+                    console.log('[Targets] Old schools:', oldCount, '| New schools:', newCount);
+                    resolve();
+                },
+                error: function(err) {
+                    console.warn('[Targets] CSV parse error:', err);
+                    window._SCHOOL_STATUS_DATA = [];
+                    resolve();
                 }
-                if (cSet.size > 0) targets[dk+'|'+ck] = cSet.size;
-            }
-            if (dSet.size > 0) targets[dk] = dSet.size;
+            });
+        });
+    }
+
+    function buildTargetsFromCSV() {
+        // Only count schools with School Status = "Old"
+        const oldSchools = (window._SCHOOL_STATUS_DATA || []).filter(r => 
+            (r['School Status'] || '').trim() === 'Old'
+        );
+        
+        console.log('[Targets] Building targets from', oldSchools.length, 'Old schools');
+        
+        const targets = {};
+        const chiefdomMap = {};
+        const districtMap = {};
+        
+        oldSchools.forEach(row => {
+            const d = (row['District'] || '').trim();
+            const c = (row['Chiefdom'] || '').trim();
+            const p = (row['Name of PHU'] || row['Facility'] || '').trim();
+            const com = (row['Community'] || '').trim();
+            const sc = (row['School Name'] || '').trim();
+            
+            if (!d || !c || !p || !sc) return;
+            
+            const dk = d.toLowerCase();
+            const ck = c.toLowerCase();
+            const pk = p.toLowerCase();
+            const comk = com.toLowerCase();
+            const fullKey = dk+'|'+ck+'|'+pk+'|'+comk+'|'+sc.toLowerCase();
+            
+            // PHU level: count unique schools
+            const phuKey = dk+'|'+ck+'|'+pk;
+            if (!targets[phuKey]) targets[phuKey] = 0;
+            targets[phuKey]++;
+            
+            // Track for chiefdom and district aggregation
+            const chiefKey = dk+'|'+ck;
+            if (!chiefdomMap[chiefKey]) chiefdomMap[chiefKey] = new Set();
+            chiefdomMap[chiefKey].add(fullKey);
+            
+            if (!districtMap[dk]) districtMap[dk] = new Set();
+            districtMap[dk].add(fullKey);
+        });
+        
+        // Chiefdom level: unique schools across PHUs
+        for (const ck in chiefdomMap) {
+            targets[ck] = chiefdomMap[ck].size;
         }
+        
+        // District level: unique schools across chiefdoms
+        for (const dk in districtMap) {
+            targets[dk] = districtMap[dk].size;
+        }
+        
+        console.log('[Targets] Built targets with', Object.keys(targets).length, 'entries');
         return targets;
     }
 
     // ════════════════════════════════════════════════════════
     //  DATA MERGE  (GAS sheet + localStorage)
     // ════════════════════════════════════════════════════════
-    let _sheetRows = [];   // cached from last GAS fetch
-    let _refreshInterval = null;  // auto-refresh timer
-    let _refreshCountdown = 60;   // seconds until next refresh
+    let _sheetRows = [];
+    let _refreshInterval = null;
+    let _refreshCountdown = 60;
 
     function getLocalRows(){
         const s=window.state||{};
@@ -357,10 +401,7 @@
     }
 
     function mergeData(sheetRows){
-        // If we have fresh sheet data, use it as the source of truth.
-        // Only fall back to local data when sheet is unavailable.
         if(sheetRows && sheetRows.length > 0) return sheetRows;
-        // Sheet unavailable — use local pending/submitted data
         return getLocalRows();
     }
 
@@ -378,7 +419,6 @@
         el.disabled=!!disabled;
     }
 
-    // Structure: loc[district][chiefdom][phu][community] = [schools]
     window.afCascade=function(level){
         const loc=getLoc();
         const d  =()=>document.getElementById('af_district' )?.value||'';
@@ -424,7 +464,6 @@
         const dd=document.getElementById('af_district');if(!dd)return;
         const loc=getLoc();
         const districts=Object.keys(loc).sort();
-        // Always rebuild — loc may not have been available last call
         dd.innerHTML='<option value="">All Districts</option>';
         districts.forEach(d=>{const o=document.createElement('option');o.value=o.textContent=d;dd.appendChild(o);});
         if(districts.length===0) console.warn('[Analysis] District filter empty — ALL_LOCATION_DATA keys:',Object.keys(window.ALL_LOCATION_DATA||{}));
@@ -435,11 +474,11 @@
         const fD  =document.getElementById('af_district' )?.value||'';
         const fC  =document.getElementById('af_chiefdom' )?.value||'';
         const fF  =document.getElementById('af_facility' )?.value||'';
-                const lc=s=>(s||'').toLowerCase();
+        const lc=s=>(s||'').toLowerCase();
         if(fD)   rows=rows.filter(r=>lc(r.district ||'')===lc(fD));
         if(fC)   rows=rows.filter(r=>lc(r.chiefdom ||'')===lc(fC));
         if(fF)   rows=rows.filter(r=>lc(r.facility ||'')===lc(fF));
-                return rows;
+        return rows;
     }
 
     // ════════════════════════════════════════════════════════
@@ -482,8 +521,7 @@
             return;
         }
 
-        // Targets come from CSV (already computed). Look up the right level
-        // based on active filters: district-only → dKey, +chiefdom → cKey, +phu → pKey
+        // Targets come from CSV filtered by "Old" status
         const targets    = window._TARGETS || {};
         const hasTargets = Object.keys(targets).length > 0;
         const fD = (document.getElementById('af_district')?.value||'').trim().toLowerCase();
@@ -492,16 +530,12 @@
         let targetCount = 0;
         if (hasTargets) {
             if (fP && fC && fD) {
-                // PHU level
                 targetCount = targets[fD+'|'+fC+'|'+fP] || 0;
             } else if (fC && fD) {
-                // Chiefdom level
                 targetCount = targets[fD+'|'+fC] || 0;
             } else if (fD) {
-                // District level
                 targetCount = targets[fD] || 0;
             } else {
-                // National total — sum all district-level entries (single-segment keys)
                 Object.entries(targets).forEach(([k, v]) => {
                     if (!k.includes('|')) targetCount += v;
                 });
@@ -514,7 +548,6 @@
         const cls={b:[0,0,0,0,0],g:[0,0,0,0,0],bi:[0,0,0,0,0],gi:[0,0,0,0,0]};
 
         all.forEach(r=>{
-            // GAS returns field-name keyed rows — read directly
             const vp =n(r,'total_pupils');
             const vi =n(r,'total_itn');
             const vb =n(r,'total_boys');
@@ -552,7 +585,7 @@
         const distBoysCov=distL.map(d=>byDist[d].b>0?Math.round((byDist[d].bi/byDist[d].b)*100):0);
         const distGirlsCov=distL.map(d=>byDist[d].g>0?Math.round((byDist[d].gi/byDist[d].g)*100):0);
 
-        // ── Build HTML ──────────────────────────────────
+        // Build HTML
         body.innerHTML=`
         <!-- KPIs -->
         <div class="an-kpi-row">
@@ -605,8 +638,6 @@
           </div>
         </div>`:''}
 
-        <!-- BY DISTRIBUTOR section removed -->
-
         <!-- School table -->
         <div class="an-section">
           <div class="an-section-hdr"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 3h18v18H3zM3 9h18M9 21V9"/></svg>ALL SCHOOLS (${total})</div>
@@ -646,34 +677,24 @@
           </div>
         </div>`;
 
-        // ── Charts ──────────────────────────────────────
-        // 1. Coverage donut
+        // Charts
         mkChart('anCovDonut',{type:'doughnut',data:{labels:['Covered','Remaining'],datasets:[{data:[ov,100-ov],backgroundColor:[covColor(ov),'#e8edf2'],borderWidth:3,borderColor:'#fff'}]},options:{...chartOpts(),cutout:'72%',plugins:{legend:{position:'bottom',labels:{font:{family:"'Oswald',sans-serif",size:11},boxWidth:12}},title:{display:true,text:ov+'%',color:covColor(ov),font:{family:"'Oswald',sans-serif",size:22,weight:'700'}}}}});
 
-        // 2. Gender enrollment donut
         mkChart('anEnrollDonut',{type:'doughnut',data:{labels:['Boys','Girls'],datasets:[{data:[tb,tg],backgroundColor:['#004080','#e91e8c'],borderWidth:3,borderColor:'#fff'}]},options:{...chartOpts(),cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{family:"'Oswald',sans-serif",size:11},boxWidth:12}}}}});
 
-        // 3. Gender ITN donut
         mkChart('anItnDonut',{type:'doughnut',data:{labels:['Boys','Girls'],datasets:[{data:[tbi,tgi],backgroundColor:['#004080','#e91e8c'],borderWidth:3,borderColor:'#fff'}]},options:{...chartOpts(),cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{family:"'Oswald',sans-serif",size:11},boxWidth:12}}}}});
 
-        // 4. Coverage by class
         mkChart('anClassCov',{type:'bar',data:{labels:classLabels,datasets:[{label:'Coverage %',data:classCov,backgroundColor:classCov.map(v=>covColor(v)+'cc'),borderColor:classCov.map(covColor),borderWidth:2,borderRadius:6}]},options:{...chartOpts({scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',font:CF.font},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:CF.font},grid:{display:false}}},plugins:{legend:{display:false},annotation:{}}})}});
 
-        // 5. Boys vs Girls coverage by class grouped
         mkChart('anClassGender',{type:'bar',data:{labels:classLabels,datasets:[{label:'Boys',data:boysCov,backgroundColor:'rgba(0,64,128,.75)',borderColor:'#004080',borderWidth:2,borderRadius:5},{label:'Girls',data:girlsCov,backgroundColor:'rgba(233,30,140,.7)',borderColor:'#e91e8c',borderWidth:2,borderRadius:5}]},options:{...chartOpts({scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',font:CF.font},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:CF.font},grid:{display:false}}}})}});
 
-        // 6. Enrollment vs ITN by class
         mkChart('anEnrollVsItn',{type:'bar',data:{labels:classLabels,datasets:[{label:'Enrolled',data:classTot,backgroundColor:'rgba(0,64,128,.2)',borderColor:'#004080',borderWidth:2,borderRadius:5},{label:'Received ITN',data:classITN,backgroundColor:'rgba(40,167,69,.7)',borderColor:'#28a745',borderWidth:2,borderRadius:5}]},options:{...chartOpts({scales:{y:{beginAtZero:true,ticks:{font:CF.font},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:CF.font},grid:{display:false}}}})}});
 
-        // 7. Coverage by district (horizontal)
         if(distL.length>1){
             mkChart('anDistCov',{type:'bar',data:{labels:distL,datasets:[{label:'Coverage %',data:distCov,backgroundColor:distCov.map(v=>covColor(v)+'cc'),borderColor:distCov.map(covColor),borderWidth:2,borderRadius:5}]},options:{...chartOpts({indexAxis:'y',scales:{x:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',font:CF.font},grid:{color:'rgba(0,0,0,.05)'}},y:{ticks:{font:CF.font},grid:{display:false}}},plugins:{legend:{display:false}}})}});
 
-            // 8. Boys vs Girls by district
             mkChart('anDistGender',{type:'bar',data:{labels:distL,datasets:[{label:'Boys',data:distBoysCov,backgroundColor:'rgba(0,64,128,.75)',borderColor:'#004080',borderWidth:2,borderRadius:4},{label:'Girls',data:distGirlsCov,backgroundColor:'rgba(233,30,140,.7)',borderColor:'#e91e8c',borderWidth:2,borderRadius:4}]},options:{...chartOpts({indexAxis:'y',scales:{x:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',font:CF.font},grid:{color:'rgba(0,0,0,.05)'}},y:{ticks:{font:CF.font},grid:{display:false}}}})}});
         }
-
-        // By distributor chart removed
     };
 
     // ════════════════════════════════════════════════════════
@@ -698,43 +719,9 @@
     };
 
     // ════════════════════════════════════════════════════════
-    //  TARGETS TAB — District → Chiefdom → Schools breakdown
+    //  TARGETS TAB — uses same filtered data (Old schools only)
     // ════════════════════════════════════════════════════════
-    // Build targets tree — each entry in ALL_LOCATION_DATA arrays is already unique
-    function buildTargetsTree() {
-        const data = window.ALL_LOCATION_DATA || {};
-        const tree = {};
-
-        for (const district in data) {
-            if (!tree[district]) tree[district] = { chiefdoms: {} };
-            const dk = district.trim().toLowerCase();
-            for (const chiefdom in data[district]) {
-                if (!tree[district].chiefdoms[chiefdom])
-                    tree[district].chiefdoms[chiefdom] = { schools: [] };
-                const ck = chiefdom.trim().toLowerCase();
-                for (const phu in data[district][chiefdom]) {
-                    const pk = phu.trim().toLowerCase();
-                    for (const community in data[district][chiefdom][phu]) {
-                        const comk = community.trim().toLowerCase();
-                        const schoolList = data[district][chiefdom][phu][community];
-                        if (!Array.isArray(schoolList)) continue;
-                        schoolList.forEach(s => {
-                            if (!s) return;
-                            tree[district].chiefdoms[chiefdom].schools.push({
-                                district, chiefdom, phu, community, name: s,
-                                key: dk+'|'+ck+'|'+pk+'|'+comk+'|'+s.trim().toLowerCase()
-                            });
-                        });
-                    }
-                }
-                tree[district].chiefdoms[chiefdom].schools.sort((a,b) => a.name.localeCompare(b.name));
-            }
-        }
-        return tree;
-    }
-
     function getSubmittedSet() {
-        // Returns Set of lowercase district|chiefdom|phu|community|school keys from ICF-SL Server only
         return new Set(
             (_sheetRows || [])
                 .filter(r => r.school_name)
@@ -753,122 +740,63 @@
         const body = document.getElementById('targetsBody');
         if (!body) return;
 
-        const tree      = buildTargetsTree();
+        // Get filtered data (only Old schools from CSV)
+        const oldSchools = (window._SCHOOL_STATUS_DATA || []).filter(r => 
+            (r['School Status'] || '').trim() === 'Old'
+        );
+        
         const submitted = getSubmittedSet();
-        const districts = Object.keys(tree).sort();
+        
+        // Group by district, chiefdom, PHU
+        const tree = {};
+        oldSchools.forEach(row => {
+            const d = (row['District'] || '').trim();
+            const c = (row['Chiefdom'] || '').trim();
+            const p = (row['Name of PHU'] || row['Facility'] || '').trim();
+            const com = (row['Community'] || '').trim();
+            const sc = (row['School Name'] || '').trim();
+            if (!d || !c || !p || !sc) return;
+            
+            if (!tree[d]) tree[d] = { chiefdoms: {} };
+            if (!tree[d].chiefdoms[c]) tree[d].chiefdoms[c] = { phus: {} };
+            if (!tree[d].chiefdoms[c].phus[p]) tree[d].chiefdoms[c].phus[p] = { communities: {} };
+            if (!tree[d].chiefdoms[c].phus[p].communities[com]) tree[d].chiefdoms[c].phus[p].communities[com] = [];
+            
+            const fullKey = d.toLowerCase()+'|'+c.toLowerCase()+'|'+p.toLowerCase()+'|'+com.toLowerCase()+'|'+sc.toLowerCase();
+            tree[d].chiefdoms[c].phus[p].communities[com].push({
+                name: sc,
+                key: fullKey,
+                submitted: submitted.has(fullKey)
+            });
+        });
 
+        const districts = Object.keys(tree).sort();
+        
         if (!districts.length) {
             body.innerHTML = `<div class="an-no-data">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-              <div>No location data loaded. Ensure cascading_data.csv is present.</div>
+              <div>No location data with Status='Old'. Ensure cascading_data.csv has 'School Status' column.</div>
             </div>`;
             return;
         }
 
-        // Show banner if sheet data not yet fetched
-        const sheetBanner = _sheetRows.length === 0
-            ? `<div class="alert" style="background:#fff8e1;border:1px solid #ffe082;border-radius:9px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-size:12px;color:#8a6500;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#c8991a" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                Submission counts show ICF-SL Server data only. Hit <strong>REFRESH</strong> to pull the latest from the server.
-              </div>`
-            : `<div class="alert" style="background:#e8f5e9;border:1px solid #b2dfcc;border-radius:9px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-size:12px;color:#2e7d32;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2" width="16" height="16"><path d="M9 11l3 3L22 4"/></svg>
-                Showing <strong>${_sheetRows.length} submissions</strong> from ICF-SL Server.
-              </div>`;
         let natSchools = 0, natDone = 0;
-        districts.forEach(d => {
-            Object.values(tree[d].chiefdoms).forEach(c => {
-                natSchools += c.schools.length;
-                natDone    += c.schools.filter(s => submitted.has(s.key)).length;
+        Object.values(tree).forEach(dist => {
+            Object.values(dist.chiefdoms).forEach(chief => {
+                Object.values(chief.phus).forEach(phu => {
+                    Object.values(phu.communities).forEach(schools => {
+                        natSchools += schools.length;
+                        natDone += schools.filter(s => s.submitted).length;
+                    });
+                });
             });
         });
         const natPct = natSchools > 0 ? Math.round((natDone / natSchools) * 100) : 0;
 
-        // Duplicate rows banner
-        const dups = window.CSV_DUPLICATES || [];
-        const dupBanner = dups.length > 0 ? `
-            <div style="background:#fff0f0;border:2px solid #dc3545;border-radius:10px;margin-bottom:14px;overflow:hidden;">
-              <div style="background:#dc3545;color:#fff;padding:9px 14px;display:flex;align-items:center;gap:8px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;letter-spacing:.5px;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                ${dups.length} DUPLICATE ROW${dups.length>1?'S':''} IN CSV — SKIPPED FROM COUNT
-              </div>
-              <div style="padding:10px 14px;overflow-x:auto;">
-                <table style="width:100%;border-collapse:collapse;font-size:11px;">
-                  <thead><tr style="background:#fde8e8;">
-                    <th style="padding:6px 10px;text-align:left;font-family:'Oswald',sans-serif;color:#c0392b;font-weight:600;white-space:nowrap;">CSV ROW</th>
-                    <th style="padding:6px 10px;text-align:left;font-family:'Oswald',sans-serif;color:#c0392b;font-weight:600;">DISTRICT</th>
-                    <th style="padding:6px 10px;text-align:left;font-family:'Oswald',sans-serif;color:#c0392b;font-weight:600;">CHIEFDOM</th>
-                    <th style="padding:6px 10px;text-align:left;font-family:'Oswald',sans-serif;color:#c0392b;font-weight:600;">PHU</th>
-                    <th style="padding:6px 10px;text-align:left;font-family:'Oswald',sans-serif;color:#c0392b;font-weight:600;">COMMUNITY</th>
-                    <th style="padding:6px 10px;text-align:left;font-family:'Oswald',sans-serif;color:#c0392b;font-weight:600;">SCHOOL</th>
-                  </tr></thead>
-                  <tbody>${dups.map((r,i)=>`<tr style="background:${i%2?'#fff':'#fff5f5'};">
-                    <td style="padding:5px 10px;color:#8090a0;">${r.row}</td>
-                    <td style="padding:5px 10px;">${r.district}</td>
-                    <td style="padding:5px 10px;">${r.chiefdom}</td>
-                    <td style="padding:5px 10px;">${r.phu}</td>
-                    <td style="padding:5px 10px;">${r.community}</td>
-                    <td style="padding:5px 10px;font-weight:600;color:#c0392b;">${r.school}</td>
-                  </tr>`).join('')}</tbody>
-                </table>
-              </div>
-              <div style="padding:8px 14px;font-size:10px;color:#607080;border-top:1px solid #fde8e8;">Fix these duplicates in cascading_data.csv to ensure accurate target counts.</div>
-            </div>` : '';
-
-        // ── Build HTML ───────────────────────────────────────────
-        let html = sheetBanner + dupBanner + `
-        <style>
-        .tg-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:18px;}
-        .tg-kpi{background:#fff;border-radius:10px;padding:14px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,64,128,.07);border-top:4px solid #004080;}
-        .tg-kpi.g{border-top-color:#28a745;} .tg-kpi.r{border-top-color:#dc3545;} .tg-kpi.o{border-top-color:#f0a500;}
-        .tg-kv{font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;color:#004080;line-height:1;}
-        .tg-kpi.g .tg-kv{color:#28a745;} .tg-kpi.r .tg-kv{color:#dc3545;} .tg-kpi.o .tg-kv{color:#b8860b;}
-        .tg-kl{font-size:10px;color:#607080;text-transform:uppercase;letter-spacing:.5px;margin-top:5px;font-family:'Oswald',sans-serif;}
-        .tg-nat-bar{height:14px;background:#e4eaf2;border-radius:7px;overflow:hidden;margin:10px 0 18px;}
-        .tg-nat-fill{height:100%;border-radius:7px;transition:width .5s;background:linear-gradient(90deg,#004080,#1a6abf);}
-        .tg-nat-lbl{font-family:'Oswald',sans-serif;font-size:11px;color:#607080;text-align:center;margin-top:-14px;position:relative;}
-
-        /* District card */
-        .tg-dist{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,64,128,.08);overflow:hidden;margin-bottom:14px;border:2px solid #d0dce8;}
-        .tg-dist-hdr{background:linear-gradient(135deg,#004080,#1a6abf);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;}
-        .tg-dist-hdr svg{width:14px;height:14px;stroke:#fff;fill:none;flex-shrink:0;}
-        .tg-dist-name{font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;flex:1;}
-        .tg-dist-badge{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:3px 10px;font-family:'Oswald',sans-serif;font-size:11px;white-space:nowrap;}
-        .tg-dist-progress{height:4px;background:rgba(255,255,255,.25);}
-        .tg-dist-progress-fill{height:100%;background:#c8991a;transition:width .4s;}
-
-        /* District stats row */
-        .tg-dist-stats{display:grid;grid-template-columns:repeat(4,1fr);background:#f0f6ff;border-bottom:1px solid #d0dce8;}
-        .tg-dist-stat{padding:10px 8px;text-align:center;border-right:1px solid #d0dce8;}
-        .tg-dist-stat:last-child{border-right:none;}
-        .tg-dst-v{font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:#004080;}
-        .tg-dst-l{font-size:9px;color:#607080;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
-
-        /* Chiefdom table */
-        .tg-chief-wrap{overflow-x:auto;}
-        .tg-chief-tbl{width:100%;border-collapse:collapse;font-size:12px;}
-        .tg-chief-tbl thead tr{background:#e8f1fa;}
-        .tg-chief-tbl th{padding:9px 14px;font-family:'Oswald',sans-serif;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#004080;text-align:left;white-space:nowrap;border-bottom:2px solid #c5d9f0;}
-        .tg-chief-tbl td{padding:9px 14px;border-bottom:1px solid #f0f4f8;vertical-align:middle;}
-        .tg-chief-tbl tr:last-child td{border-bottom:none;}
-        .tg-chief-tbl tr:nth-child(even) td{background:#fafcff;}
-        .tg-chief-tbl tr:hover td{background:#eef5ff;}
-        .tg-prog-cell{display:flex;align-items:center;gap:8px;}
-        .tg-prog-bar{background:#e4eaf2;border-radius:4px;height:8px;flex:1;overflow:hidden;min-width:60px;}
-        .tg-prog-fill{height:100%;border-radius:4px;}
-        .tg-school-chips{display:flex;flex-wrap:wrap;gap:3px;max-width:340px;}
-    .tg-chip.new-school{background:#fff3cd;border:1px solid #ffc107;color:#856404;font-style:italic;}
-    .tg-chip.new-school::before{content:'★ ';}
-        .tg-chip{display:inline-block;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:600;white-space:nowrap;}
-        .tg-chip.done{background:#e8f5e9;color:#28a745;border:1px solid #b2dfcc;}
-        .tg-chip.pend{background:#fff8e1;color:#b8860b;border:1px solid #ffe082;}
-        .tg-expand-btn{background:none;border:none;cursor:pointer;font-family:'Oswald',sans-serif;font-size:10px;color:#004080;letter-spacing:.4px;text-decoration:underline;padding:0;white-space:nowrap;}
-        </style>
-
+        let html = `
         <div class="tg-kpi-row">
           <div class="tg-kpi b"><div class="tg-kv">${districts.length}</div><div class="tg-kl">Districts</div></div>
-          <div class="tg-kpi"><div class="tg-kv">${districts.reduce((s,d)=>s+Object.keys(tree[d].chiefdoms).length,0)}</div><div class="tg-kl">Chiefdoms</div></div>
-          <div class="tg-kpi b"><div class="tg-kv">${natSchools.toLocaleString()}</div><div class="tg-kl">Target Schools</div></div>
+          <div class="tg-kpi b"><div class="tg-kv">${natSchools.toLocaleString()}</div><div class="tg-kl">Target Schools (Old)</div></div>
           <div class="tg-kpi g"><div class="tg-kv g">${natDone.toLocaleString()}</div><div class="tg-kl">Submitted</div></div>
           <div class="tg-kpi r"><div class="tg-kv r">${(natSchools-natDone).toLocaleString()}</div><div class="tg-kl">Remaining</div></div>
           <div class="tg-kpi ${natPct>=80?'g':natPct>=50?'o':'r'}"><div class="tg-kv">${natPct}%</div><div class="tg-kl">Progress</div></div>
@@ -876,7 +804,7 @@
 
         <div style="margin-bottom:20px;">
           <div style="display:flex;justify-content:space-between;font-family:'Oswald',sans-serif;font-size:11px;color:#607080;margin-bottom:5px;">
-            <span>NATIONAL PROGRESS</span><span style="font-weight:700;color:${natPct>=80?'#28a745':natPct>=50?'#b8860b':'#dc3545'}">${natDone} / ${natSchools} schools (${natPct}%)</span>
+            <span>PROGRESS (OLD SCHOOLS ONLY)</span><span style="font-weight:700;color:${natPct>=80?'#28a745':natPct>=50?'#b8860b':'#dc3545'}">${natDone} / ${natSchools} schools (${natPct}%)</span>
           </div>
           <div class="tg-nat-bar"><div class="tg-nat-fill" style="width:${natPct}%;background:${natPct>=80?'#28a745':natPct>=50?'#f0a500':'#dc3545'};"></div></div>
         </div>`;
@@ -885,12 +813,14 @@
             const chiefdoms = Object.keys(tree[district].chiefdoms).sort();
             let dTotal = 0, dDone = 0;
             chiefdoms.forEach(c => {
-                const schs = tree[district].chiefdoms[c].schools;
-                dTotal += schs.length;
-                dDone  += schs.filter(s => submitted.has(s.key)).length;
+                Object.values(tree[district].chiefdoms[c].phus).forEach(phu => {
+                    Object.values(phu.communities).forEach(schools => {
+                        dTotal += schools.length;
+                        dDone += schools.filter(s => s.submitted).length;
+                    });
+                });
             });
-            const dPct  = dTotal > 0 ? Math.round((dDone / dTotal) * 100) : 0;
-            const dCol  = dPct >= 80 ? '#28a745' : dPct >= 50 ? '#f0a500' : '#dc3545';
+            const dPct = dTotal > 0 ? Math.round((dDone / dTotal) * 100) : 0;
             const panelId = 'tg-panel-' + di;
 
             html += `
@@ -900,124 +830,63 @@
                 <span class="tg-dist-name">${district}</span>
                 <span class="tg-dist-badge">${chiefdoms.length} chiefdom${chiefdoms.length!==1?'s':''}</span>
                 <span class="tg-dist-badge">${dTotal} schools</span>
-                <span class="tg-dist-badge" style="background:${dPct>=80?'rgba(40,167,69,.35)':dPct>=50?'rgba(240,165,0,.35)':'rgba(220,53,69,.35)'};border-color:${dCol};">${dPct}%</span>
+                <span class="tg-dist-badge" style="background:${dPct>=80?'rgba(40,167,69,.35)':dPct>=50?'rgba(240,165,0,.35)':'rgba(220,53,69,.35)'};">${dPct}%</span>
                 <svg viewBox="0 0 24 24" style="width:12px;height:12px;flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg>
               </div>
               <div class="tg-dist-progress"><div class="tg-dist-progress-fill" style="width:${dPct}%;"></div></div>
-
-              <div id="${panelId}">
-                <div class="tg-dist-stats">
-                  <div class="tg-dist-stat"><div class="tg-dst-v">${chiefdoms.length}</div><div class="tg-dst-l">Chiefdoms</div></div>
-                  <div class="tg-dist-stat"><div class="tg-dst-v">${dTotal}</div><div class="tg-dst-l">Target Schools</div></div>
-                  <div class="tg-dist-stat"><div class="tg-dst-v" style="color:#28a745;">${dDone}</div><div class="tg-dst-l">Submitted</div></div>
-                  <div class="tg-dist-stat"><div class="tg-dst-v" style="color:#dc3545;">${dTotal-dDone}</div><div class="tg-dst-l">Remaining</div></div>
-                </div>
-
+              <div id="${panelId}" style="display:none;padding:12px;">
                 <div class="tg-chief-wrap">
                   <table class="tg-chief-tbl">
-                    <thead><tr>
-                      <th>#</th>
-                      <th>Chiefdom / PHU</th>
-                      <th style="text-align:center;">Target</th>
-                      <th style="text-align:center;">Submitted</th>
-                      <th style="text-align:center;">Remaining</th>
-                      <th style="min-width:160px;">Progress</th>
-                      <th>Schools</th>
-                    </tr></thead>
+                    <thead><tr><th>Chiefdom / PHU</th><th style="text-align:center;">Target</th><th style="text-align:center;">Submitted</th><th style="text-align:center;">Remaining</th><th>Progress</th><th>Schools</th></tr></thead>
                     <tbody>`;
 
-            chiefdoms.forEach((chiefdom, ci) => {
-                const schs   = tree[district].chiefdoms[chiefdom].schools;
-                const cTotal = schs.length;
-                const cDone  = schs.filter(s => submitted.has(s.key)).length;
-                const cPct   = cTotal > 0 ? Math.round((cDone / cTotal) * 100) : 0;
-                const cCol   = cPct >= 80 ? '#28a745' : cPct >= 50 ? '#f0a500' : '#dc3545';
-                const chipsId = `chips-${di}-${ci}`;
-
-                // Show first 5 schools as chips, expandable
-                // Get new schools added in field
-                const _newSchools = (window.getNewSchoolsAdded ? window.getNewSchoolsAdded() : [])
-                    .map(ns => (ns.key||'').toLowerCase());
-
-                const chips = schs.map(s => {
-                    const done     = submitted.has(s.key);
-                    const isNew    = _newSchools.includes((s.key||'').toLowerCase());
-                    const label    = s.name.length > 22 ? s.name.substring(0,20)+'…' : s.name;
-                    const cls      = done ? 'done' : isNew ? 'pend new-school' : 'pend';
-                    const tooltip  = s.name + ' · ' + s.community + (isNew ? ' (NEW — added in field)' : '');
-                    return `<span class="tg-chip ${cls}" title="${tooltip}">${done?'✓ ':''}${label}</span>`;
-                }).join('');
-
-                // Also add new schools not in CSV target but submitted/added
-                const newInField = _newSchools.filter(k => {
-                    const parts = k.split('|');
-                    const d2 = parts[0]||'', c2 = parts[1]||'', p2 = parts[2]||'';
-                    return d2.toLowerCase() === district.toLowerCase() &&
-                           c2.toLowerCase() === chiefdom.toLowerCase();
-                }).map(k => {
-                    const done2 = submitted.has(k);
-                    const parts = k.split('|');
-                    const nm    = parts[4] || k;
-                    const lbl   = nm.length > 22 ? nm.substring(0,20)+'…' : nm;
-                    return `<span class="tg-chip pend new-school" title="${nm} (NEW — added in field)">★ ${lbl}</span>`;
-                }).join('');
-
-                // Build PHU sub-rows
-                const phuMap = {};
-                schs.forEach(s => {
-                    if (!phuMap[s.phu]) phuMap[s.phu] = [];
-                    phuMap[s.phu].push(s);
+            chiefdoms.forEach(chiefdom => {
+                const phus = Object.keys(tree[district].chiefdoms[chiefdom].phus).sort();
+                let cTotal = 0, cDone = 0;
+                phus.forEach(phu => {
+                    Object.values(tree[district].chiefdoms[chiefdom].phus[phu].communities).forEach(schools => {
+                        cTotal += schools.length;
+                        cDone += schools.filter(s => s.submitted).length;
+                    });
                 });
-                const phuKeys = Object.keys(phuMap).sort();
-                const phuSubRows = phuKeys.map((phu, pi) => {
-                    const pSchs  = phuMap[phu];
-                    const pTotal = pSchs.length;
-                    const pDone  = pSchs.filter(s => submitted.has(s.key)).length;
-                    const pPct   = pTotal > 0 ? Math.round((pDone / pTotal) * 100) : 0;
-                    const pCol   = pPct >= 80 ? '#28a745' : pPct >= 50 ? '#f0a500' : '#dc3545';
-                    const pChips = pSchs.map(s => {
-                        const done = submitted.has(s.key);
-                        const lbl  = s.name.length > 20 ? s.name.substring(0,18)+'…' : s.name;
-                        return `<span class="tg-chip ${done?'done':'pend'}" title="${s.name} · ${s.community}">${done?'✓ ':''} ${lbl}</span>`;
-                    }).join('');
-                    return `<tr style="background:#f8fbff;">
-                        <td style="color:#bbb;font-size:10px;padding-left:20px;">└</td>
-                        <td style="font-size:11px;color:#555;padding-left:20px;white-space:nowrap;">
-                            <span style="background:#e8f1fb;color:#004080;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;">PHU</span>
-                            ${phu}
-                        </td>
+                const cPct = cTotal > 0 ? Math.round((cDone / cTotal) * 100) : 0;
+                const cCol = cPct >= 80 ? '#28a745' : cPct >= 50 ? '#f0a500' : '#dc3545';
+                
+                html += `<tr style="background:#f0f4f8;"><td style="font-weight:700;color:#004080;">📍 ${chiefdom}</td>
+                    <td style="text-align:center;font-weight:700;">${cTotal}</td>
+                    <td style="text-align:center;font-weight:700;color:#28a745;">${cDone}</td>
+                    <td style="text-align:center;font-weight:700;color:${cTotal-cDone>0?'#dc3545':'#28a745'};">${cTotal-cDone}</td>
+                    <td><div class="tg-prog-cell"><div class="tg-prog-bar"><div class="tg-prog-fill" style="width:${cPct}%;background:${cCol};"></div></div><span style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:${cCol};">${cPct}%</span></div></td>
+                    <td style="color:#607080;font-size:10px;">${phus.length} PHU${phus.length!==1?'s':''}</td>
+                </tr>`;
+                
+                phus.forEach(phu => {
+                    const communities = Object.keys(tree[district].chiefdoms[chiefdom].phus[phu].communities);
+                    let pTotal = 0, pDone = 0;
+                    communities.forEach(com => {
+                        const schools = tree[district].chiefdoms[chiefdom].phus[phu].communities[com];
+                        pTotal += schools.length;
+                        pDone += schools.filter(s => s.submitted).length;
+                    });
+                    const pPct = pTotal > 0 ? Math.round((pDone / pTotal) * 100) : 0;
+                    const pCol = pPct >= 80 ? '#28a745' : pPct >= 50 ? '#f0a500' : '#dc3545';
+                    const schoolChips = [];
+                    communities.forEach(com => {
+                        const schools = tree[district].chiefdoms[chiefdom].phus[phu].communities[com];
+                        schools.forEach(s => {
+                            schoolChips.push(`<span class="tg-chip ${s.submitted?'done':'pend'}" title="${com} · ${s.name}">${s.submitted?'✓ ':''}${s.name.length > 25 ? s.name.substring(0,22)+'…' : s.name}</span>`);
+                        });
+                    });
+                    
+                    html += `<tr style="background:#f8fbff;">
+                        <td style="font-size:11px;color:#555;padding-left:20px;"><span style="background:#e8f1fb;color:#004080;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;">PHU</span> ${phu}</td>
                         <td style="text-align:center;font-size:11px;">${pTotal}</td>
                         <td style="text-align:center;font-size:11px;color:#28a745;font-weight:700;">${pDone}</td>
                         <td style="text-align:center;font-size:11px;color:${pTotal-pDone>0?'#dc3545':'#28a745'};font-weight:700;">${pTotal-pDone}</td>
-                        <td>
-                          <div class="tg-prog-cell">
-                            <div class="tg-prog-bar"><div class="tg-prog-fill" style="width:${pPct}%;background:${pCol};"></div></div>
-                            <span style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;color:${pCol};white-space:nowrap;">${pPct}%</span>
-                          </div>
-                        </td>
-                        <td><div class="tg-school-chips">${pChips}</div></td>
-                      </tr>`;
-                }).join('');
-
-                html += `
-                      <tr style="background:#f0f4f8;">
-                        <td style="color:#8090a0;font-size:11px;font-weight:700;">${ci+1}</td>
-                        <td style="font-weight:700;color:#004080;white-space:nowrap;">
-                            📍 ${chiefdom}
-                            <span style="font-size:10px;color:#607080;font-weight:400;margin-left:6px;">${phuKeys.length} PHU${phuKeys.length!==1?'s':''}</span>
-                        </td>
-                        <td style="text-align:center;font-weight:700;">${cTotal}</td>
-                        <td style="text-align:center;font-weight:700;color:#28a745;">${cDone}</td>
-                        <td style="text-align:center;font-weight:700;color:${cTotal-cDone>0?'#dc3545':'#28a745'};">${cTotal-cDone}</td>
-                        <td>
-                          <div class="tg-prog-cell">
-                            <div class="tg-prog-bar"><div class="tg-prog-fill" style="width:${cPct}%;background:${cCol};"></div></div>
-                            <span style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:${cCol};white-space:nowrap;">${cPct}%</span>
-                          </div>
-                        </td>
-                        <td style="color:#607080;font-size:10px;">${phuKeys.length} PHU${phuKeys.length!==1?'s':''} · ${cTotal} schools</td>
-                      </tr>
-                      ${phuSubRows}`;
+                        <td><div class="tg-prog-cell"><div class="tg-prog-bar"><div class="tg-prog-fill" style="width:${pPct}%;background:${pCol};"></div></div><span style="font-size:10px;font-weight:700;color:${pCol};">${pPct}%</span></div></td>
+                        <td><div class="tg-school-chips">${schoolChips.join('')}</div></td>
+                    </tr>`;
+                });
             });
 
             html += `
@@ -1029,11 +898,9 @@
         });
 
         body.innerHTML = html;
-
-        // Set the first district panel open by default
+        
         const firstPanel = document.getElementById('tg-panel-0');
         if (firstPanel) firstPanel.style.display = 'block';
-        // Others closed
         districts.forEach((_, i) => {
             if (i > 0) {
                 const p = document.getElementById('tg-panel-' + i);
@@ -1042,7 +909,9 @@
         });
     }
 
-    // ── Open/close analysis ───────────────────────────────
+    // ════════════════════════════════════════════════════════
+    //  OPEN/CLOSE ANALYSIS with CSV loading
+    // ════════════════════════════════════════════════════════
     window.openAnalysisModal = async function(){
         const modal=document.getElementById('analysisModal');
         if(!modal)return;
@@ -1055,12 +924,14 @@
         if(body)body.innerHTML=`<div class="an-loading"><div class="an-spinner"></div><div class="an-load-txt">Fetching data from ICF-SL Server…</div></div>`;
         if(sub)sub.textContent='Loading…';
 
+        // Load CSV and filter by School Status = "Old"
+        await parseSchoolStatusCSV();
+        
         const sheetRows = await fetchSheetData();
         _sheetRows = sheetRows;
         window._TARGETS = buildTargetsFromCSV();
         runAnalysis(sheetRows);
 
-        // ── Start auto-refresh every 60s while modal is open ──
         startAutoRefresh();
     };
 
@@ -1070,9 +941,11 @@
         document.getElementById('analysisModal')?.classList.remove('show');
     };
 
-    // ── AUTO REFRESH ─────────────────────────────────────────
+    // ════════════════════════════════════════════════════════
+    //  AUTO REFRESH
+    // ════════════════════════════════════════════════════════
     function startAutoRefresh(){
-        stopAutoRefresh();  // clear any existing
+        stopAutoRefresh();
         _refreshCountdown = 60;
         updateRefreshBtn();
         _refreshInterval = setInterval(async () => {
@@ -1080,7 +953,6 @@
             updateRefreshBtn();
             if(_refreshCountdown <= 0){
                 _refreshCountdown = 60;
-                // Silently refresh data in background
                 const rows = await fetchSheetData();
                 _sheetRows = rows;
                 window._TARGETS = buildTargetsFromCSV();
@@ -1115,6 +987,7 @@
         if(btn){btn.disabled=true;btn.textContent='↻ Loading…';}
         _refreshCountdown = 60;
         try {
+            await parseSchoolStatusCSV();
             const rows = await fetchSheetData();
             _sheetRows = rows;
             window._TARGETS = buildTargetsFromCSV();
@@ -1151,28 +1024,24 @@
         setStatus(c==='?'?'err':'ok',c==='?'?'GAS unreachable':'GAS connected · '+c+' records');
     };
 
-    // ── Auto-refresh stats strip every 30 seconds ─────────────
     let _statsTimer = null;
     function startStatsAutoRefresh(){
         if(_statsTimer) clearInterval(_statsTimer);
         _statsTimer = setInterval(async ()=>{
-            // Only refresh if page is visible and user is online
             if(document.hidden || !navigator.onLine) return;
             const c = await fetchCount();
             const el = document.getElementById('icfAiStats');
             if(el) el.innerHTML = statsHTML(c);
-        }, 30000); // every 30 seconds
+        }, 30000);
     }
 
-    // Start immediately when AI agent loads
     window.icfAiRefreshStats().then(()=>{ startStatsAutoRefresh(); }).catch(()=>{ startStatsAutoRefresh(); });
 
-    // Also refresh stats immediately after every submission
     const _origMarkSubmitted = window.markSchoolSubmitted;
     if(typeof _origMarkSubmitted === 'function'){
         window.markSchoolSubmitted = function(data){
             _origMarkSubmitted(data);
-            setTimeout(()=>window.icfAiRefreshStats(), 1500); // slight delay to let GAS save
+            setTimeout(()=>window.icfAiRefreshStats(), 1500);
         };
     }
 
@@ -1244,8 +1113,7 @@
     window.icfAiOverlayClick=e=>{if(e.target.id==='icfAiOverlay')icfAiClose();};
     document.addEventListener('keydown',e=>{if(e.key==='Escape'){icfAiClose();closeAnalysisModal();}});
 
-
-// ════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════
     //  DMS/PHU TAB — PHU delivery tracking from CSV + GAS
     // ════════════════════════════════════════════════════════
     async function renderDmsPhuTab() {
@@ -1260,14 +1128,12 @@
             const lc = v => String(v||'').trim().toLowerCase();
             const key = (d,c,f) => lc(d)+'|'+lc(c)+'|'+lc(f);
 
-            // 1. Load dms_cascading.csv — strip " District" and " Chiefdom" suffixes
             const csvTree = {};
             await new Promise(resolve => {
                 Papa.parse('./dms_cascading.csv', {
                     download:true, header:true, skipEmptyLines:true,
                     complete(res) {
                         (res.data||[]).forEach(row => {
-                            // Strip " District" and " Chiefdom" suffixes to match sheet data
                             let d = (row['District']||row['district']||'').trim().replace(/\s*District\s*$/i,'').trim();
                             let c = (row['Chiefdom']||row['chiefdom']||'').trim().replace(/\s*Chiefdom\s*$/i,'').trim();
                             const f = (row['Facility']||row['facility']||row['Name of PHU']||row['hf']||'').trim();
@@ -1276,7 +1142,7 @@
                             if (!csvTree[d][c]) csvTree[d][c]=[];
                             if (!csvTree[d][c].includes(f)) csvTree[d][c].push(f);
                         });
-                        console.log('[DMS/PHU] csvTree loaded:', Object.keys(csvTree).length, 'districts, sample:', Object.keys(csvTree)[0]);
+                        console.log('[DMS/PHU] csvTree loaded:', Object.keys(csvTree).length, 'districts');
                         resolve();
                     },
                     error(){ resolve(); }
@@ -1288,7 +1154,6 @@
                 return;
             }
 
-            // 2. Fetch ITN Movement and PHU Receipts from GAS
             const gasUrl = 'https://script.google.com/macros/s/AKfycbymRy-M5v0fVLWUjw4IXYhd1oIR2ZvnP_Dzr_iGR-Th0cMIpmE2ntGeujWYH7-C6NHIzA/exec';
 
             const parseArr = d => Array.isArray(d) ? d : (Array.isArray(d?.rows) ? d.rows : (Array.isArray(d?.data) ? d.data : []));
@@ -1300,31 +1165,15 @@
 
             const dispatched = parseArr(dispRaw.status==='fulfilled' ? dispRaw.value : []);
             const received   = parseArr(recRaw.status==='fulfilled'  ? recRaw.value  : []);
-            console.log('[DMS/PHU] Dispatches:',dispatched.length,'Receipts:',received.length);
-            if(dispatched.length) console.log('[DMS/PHU] Sample dispatch:',JSON.stringify(dispatched[0]));
-            if(received.length)   console.log('[DMS/PHU] Sample receipt:',JSON.stringify(received[0]));
 
-            // Build composite key sets: district|chiefdom|phu (lowercase)
-            // ITN Movement:  district=Destination District, chiefdom=Chiefdom, phu=Health Facility (PHU)
-            // PHU Receipts:  district=District, chiefdom=Chiefdom, phu=PHU
-            // Build sets with multiple key formats for robust matching
             const dispSet    = new Set(dispatched.map(d => key(d.district, d.chiefdom, d.phu)));
             const dispPhuOnly= new Set(dispatched.map(d => lc(d.phu)));
             const recSet     = new Set(received.map(r  => key(r.district, r.chiefdom, r.phu)));
             const recPhuOnly = new Set(received.map(r  => lc(r.phu)));
 
-            // Diagnostic: log first 5 PHUs from each set
-            console.log('[DMS/PHU] dispPhuOnly sample:',[...dispPhuOnly].slice(0,5));
-            console.log('[DMS/PHU] recPhuOnly sample:',[...recPhuOnly].slice(0,5));
-            // Log first 5 PHUs from csvTree to compare
-            const csvSample=[];
-            Object.keys(csvTree).slice(0,2).forEach(d=>Object.keys(csvTree[d]).slice(0,1).forEach(c=>csvTree[d][c].slice(0,3).forEach(f=>csvSample.push({d,c,f:f.toLowerCase()}))));
-            console.log('[DMS/PHU] csvTree sample:',csvSample);
-
             function isDispatched(d,c,f){ return dispSet.has(key(d,c,f)) || dispPhuOnly.has(lc(f)); }
             function isReceived(d,c,f){   return recSet.has(key(d,c,f))  || recPhuOnly.has(lc(f));  }
 
-            // 3. Totals
             let totTotal=0, totReceived=0, totPending=0, totNot=0;
             Object.keys(csvTree).forEach(district => {
                 Object.keys(csvTree[district]).forEach(chiefdom => {
@@ -1339,7 +1188,6 @@
 
             const pct = totTotal ? Math.round(totReceived/totTotal*100) : 0;
 
-            // 4. Render summary
             let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
                 ${dmsCard('Total PHUs', totTotal, '#004080')}
                 ${dmsCard('Received ✅', totReceived, '#28a745')}
@@ -1361,10 +1209,8 @@
                 </div>
             </div>`;
 
-            // 5. District > Chiefdom > PHU breakdown
             Object.keys(csvTree).sort().forEach(district => {
                 const duid = 'dist_' + district.replace(/\s+/g,'_').replace(/[^a-z0-9_]/gi,'');
-                // District stats
                 let dRec=0,dPend=0,dNot=0,dTotal=0;
                 Object.keys(csvTree[district]).forEach(chiefdom => {
                     csvTree[district][chiefdom].forEach(phu => {
@@ -1445,5 +1291,5 @@
         </div>`;
     }
 
-    console.log('[ICF AI Agent] Loaded ✓');
+    console.log('[ICF AI Agent] Loaded with School Status filtering ✓');
 })();
