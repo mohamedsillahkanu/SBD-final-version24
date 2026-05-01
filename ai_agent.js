@@ -384,6 +384,7 @@
         const d  =()=>document.getElementById('af_district' )?.value||'';
         const c  =()=>document.getElementById('af_chiefdom' )?.value||'';
         const f  =()=>document.getElementById('af_facility' )?.value||'';
+        const co =()=>document.getElementById('af_community')?.value||''; // FIXED: missing co function
 
         const resetBelow=(...ids)=>ids.forEach(id=>{
             const el=document.getElementById(id);
@@ -391,11 +392,11 @@
         });
 
         if(level==='district'){
-            resetBelow('af_chiefdom','af_facility');
+            resetBelow('af_chiefdom','af_facility','af_community','af_school'); // FIXED: reset all below
             if(d()&&loc[d()]) afOpt('af_chiefdom',Object.keys(loc[d()]),false);
 
         }else if(level==='chiefdom'){
-            resetBelow('af_facility');
+            resetBelow('af_facility','af_community','af_school');
             if(d()&&c()&&loc[d()]?.[c()]) afOpt('af_facility',Object.keys(loc[d()][c()]),false);
 
         }else if(level==='facility'){
@@ -406,13 +407,13 @@
         }else if(level==='community'){
             resetBelow('af_school');
             const schools=loc[d()]?.[c()]?.[f()]?.[co()];
-            if(schools) afOpt('af_school',schools,false);
+            if(schools && Array.isArray(schools)) afOpt('af_school',schools,false); // FIXED: check array
         }
         runAnalysis();
     };
 
     window.clearAnalysisFilters=function(){
-        ['af_chiefdom','af_facility'].forEach(id=>{
+        ['af_chiefdom','af_facility','af_community','af_school'].forEach(id=>{ // FIXED: clear all filters
             const el=document.getElementById(id);
             if(el){el.innerHTML='<option value="">All</option>';el.disabled=true;}
         });
@@ -435,11 +436,15 @@
         const fD  =document.getElementById('af_district' )?.value||'';
         const fC  =document.getElementById('af_chiefdom' )?.value||'';
         const fF  =document.getElementById('af_facility' )?.value||'';
-                const lc=s=>(s||'').toLowerCase();
-        if(fD)   rows=rows.filter(r=>lc(r.district ||'')===lc(fD));
-        if(fC)   rows=rows.filter(r=>lc(r.chiefdom ||'')===lc(fC));
-        if(fF)   rows=rows.filter(r=>lc(r.facility ||'')===lc(fF));
-                return rows;
+        const fCo =document.getElementById('af_community')?.value||''; // FIXED: add community filter
+        const fS  =document.getElementById('af_school'   )?.value||''; // FIXED: add school filter
+        const lc=s=>(s||'').toLowerCase();
+        if(fD)   rows=rows.filter(r=>lc(r.district ||r['District']||'')===lc(fD));
+        if(fC)   rows=rows.filter(r=>lc(r.chiefdom ||r['Chiefdom']||'')===lc(fC));
+        if(fF)   rows=rows.filter(r=>lc(r.facility ||r['Health Facility (PHU)']||'')===lc(fF));
+        if(fCo)  rows=rows.filter(r=>lc(r.community||r['Community / Village']||'')===lc(fCo));
+        if(fS)   rows=rows.filter(r=>lc(r.school_name||r['School Name']||'')===lc(fS));
+        return rows;
     }
 
     // ════════════════════════════════════════════════════════
@@ -605,8 +610,6 @@
           </div>
         </div>`:''}
 
-        <!-- BY DISTRIBUTOR section removed -->
-
         <!-- School table -->
         <div class="an-section">
           <div class="an-section-hdr"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M3 3h18v18H3zM3 9h18M9 21V9"/></svg>ALL SCHOOLS (${total})</div>
@@ -672,8 +675,6 @@
             // 8. Boys vs Girls by district
             mkChart('anDistGender',{type:'bar',data:{labels:distL,datasets:[{label:'Boys',data:distBoysCov,backgroundColor:'rgba(0,64,128,.75)',borderColor:'#004080',borderWidth:2,borderRadius:4},{label:'Girls',data:distGirlsCov,backgroundColor:'rgba(233,30,140,.7)',borderColor:'#e91e8c',borderWidth:2,borderRadius:4}]},options:{...chartOpts({indexAxis:'y',scales:{x:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',font:CF.font},grid:{color:'rgba(0,0,0,.05)'}},y:{ticks:{font:CF.font},grid:{display:false}}}})}});
         }
-
-        // By distributor chart removed
     };
 
     // ════════════════════════════════════════════════════════
@@ -933,6 +934,7 @@
             if (el) el.value = statusFilter;
         }, 0);
     }
+    
     // ── Open/close analysis ───────────────────────────────
     window.openAnalysisModal = async function(){
         const modal=document.getElementById('analysisModal');
@@ -1136,7 +1138,7 @@
     document.addEventListener('keydown',e=>{if(e.key==='Escape'){icfAiClose();closeAnalysisModal();}});
 
 
-// ════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════
     //  DMS/PHU TAB — PHU delivery tracking from CSV + GAS
     // ════════════════════════════════════════════════════════
     async function renderDmsPhuTab() {
@@ -1325,6 +1327,7 @@
             body.innerHTML = html;
 
         } catch(err) {
+            console.error('[DMS/PHU] Error:', err);
             body.innerHTML = `<div style="padding:24px;font-family:Oswald,sans-serif;color:#dc3545;font-size:13px;">Error: ${err.message}</div>`;
         }
     }
